@@ -116,6 +116,7 @@ st.download_button(
     file_name=fname,
     mime="text/html",
     use_container_width=True,
+    type="primary",
 )
 
 st.success(f"報告大小：{len(html) / 1024:.0f} KB")

@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from report_config import THRESHOLDS, THEME_BG, C, PLOTLY_CFG, fmt, fmt_pct, safe_div
 
-def style_fig(fig, title="", height=400):
+def style_fig(fig, title="", height=500):
     fig.update_layout(
         title=dict(text=title, font=dict(size=22, color=C["text"]), x=0),
         plot_bgcolor=THEME_BG,

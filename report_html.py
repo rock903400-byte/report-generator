@@ -30,29 +30,29 @@ def build_report(d, charts):
     data_end = max_d.strftime("%Y 年 %m 月")
     report_date = date.today().strftime("%Y 年 %m 月 %d 日")
 
-    # KPI 卡片
+    # KPI 卡片（診斷→逾放比→貸放比→社員→股金→儲蓄率→開支比→提撥率）
     kpi_cards = [
+        {"label": "診斷結果", "value": status,
+         "sub": reason_text, "good": status.startswith("✅")},
+        {"label": "逾放比",  "value": fmt_pct(d['eOvd']),
+         "sub": f"{'警戒' if d['eOvd'] > 0.02 else '正常'} (警戒值 2%)",
+         "good": d['eOvd'] <= 0.02},
+        {"label": "貸放比",  "value": fmt_pct(d['eLoan']),
+         "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%)",
+         "good": 0.4 <= d['eLoan'] <= 0.8},
         {"label": "現有社員", "value": f"{int(d['curr_M']):,} 人",
          "sub": f"12M {'↑' if d['memG_curr'] >= 0 else '↓'} {abs(int(d['curr_M'] - d['M0'])):,} 人 ({fmt_pct(d['memG_curr'])})",
          "good": d['memG_curr'] >= 0},
         {"label": "現有股金", "value": fmt(d['curr_S']),
          "sub": f"12M {'↑' if d['shrG_curr'] >= 0 else '↓'} {fmt(abs(d['curr_S'] - d['S0']))} ({fmt_pct(d['shrG_curr'])})",
          "good": d['shrG_curr'] >= 0},
-        {"label": "貸放比",  "value": fmt_pct(d['eLoan']),
-         "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%)",
-         "good": 0.4 <= d['eLoan'] <= 0.8},
         {"label": "儲蓄率",  "value": fmt_pct(d['eRate']),
          "sub": "存款 / 股金", "good": d['eRate'] >= THRESHOLDS["savings_good"]},
-        {"label": "逾放比",  "value": fmt_pct(d['eOvd']),
-         "sub": f"{'警戒' if d['eOvd'] > 0.02 else '正常'} (警戒值 2%)",
-         "good": d['eOvd'] <= 0.02},
         {"label": "開支比(年)", "value": fmt_pct(d['R0']),
          "sub": f"{'虧損' if d['R0'] > 1.0 else '盈餘'} (損益平衡 100%)",
          "good": d['R0'] <= 1.0},
         {"label": "提撥率",  "value": fmt_pct(d['eProv']),
          "sub": "備抵呆帳 / 逾期貸款", "good": d['eProv'] >= THRESHOLDS["provision_good"]},
-        {"label": "診斷結果", "value": status,
-         "sub": reason_text, "good": status.startswith("✅")},
     ]
 
     def kpi_card_html(card):
@@ -163,7 +163,7 @@ def build_report(d, charts):
       display: inline-block;
       background: {status_color};
       color: #fff;
-      font-size: 1.1rem;
+      font-size: 1.3rem;
       font-weight: 700;
       padding: 6px 18px;
       border-radius: 100px;
@@ -201,14 +201,14 @@ def build_report(d, charts):
       margin-bottom: 0.4rem;
     }}
     .kpi-value {{
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 900;
       line-height: 1.2;
       word-break: break-all;
     }}
     .kpi-sub {{
       font-size: 0.85rem;
-      color: #94A3B8;
+      color: #64748B;
       margin-top: 0.3rem;
     }}
     .chart-grid-2 {{
@@ -229,7 +229,7 @@ def build_report(d, charts):
     .data-table {{
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.95rem;
+      font-size: 1.05rem;
     }}
     .data-table th {{
       background: #1E293B;
@@ -277,6 +277,15 @@ def build_report(d, charts):
       .report-header {{ padding: 1.5rem; }}
       .report-header h1 {{ font-size: 1.6rem; }}
       .kpi-value {{ font-size: 1.5rem; }}
+    }}
+    @media print {{
+      body {{ font-size: 12px; }}
+      .report-header {{ padding: 1rem 1.5rem; }}
+      .report-header h1 {{ font-size: 1.4rem; }}
+      .kpi-card {{ box-shadow: none; border: 1px solid #CBD5E1; break-inside: avoid; }}
+      .kpi-value {{ font-size: 1.4rem; }}
+      .chart-box {{ break-inside: avoid; }}
+      .report-footer {{ position: fixed; bottom: 0; width: 100%; }}
     }}
   </style>
 </head>
@@ -339,7 +348,7 @@ def build_report(d, charts):
 </div>
 
 <div class="report-footer">
-  本報告由穿透系統自動產製 ｜ {report_date}<br>
+  本報告由系統自動產製 ｜ {report_date}<br>
   資料來源：{s_name}（社號 {s_no}）
 </div>
 
