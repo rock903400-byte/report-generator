@@ -74,7 +74,7 @@ def load_data():
     return load_data_from_bytes(xls_bytes, csv_bytes)
 
 def extract_union_data(df_m, df_l, df_csv, union_id):
-    """依社號提取單一合作社資料，回傳 dict"""
+    """依社號提取單一儲互社資料，回傳 dict"""
     union_m = df_m[df_m["社號"] == union_id].copy()
     union_l = df_l[df_l["社號"] == union_id].copy()
 

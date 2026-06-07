@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Streamlit Cloud 版：理事會報告產生器
-使用者上傳 Excel + CSV → 選擇合作社 → 產出 HTML 報告 → 下載
+使用者上傳 Excel + CSV → 選擇儲互社 → 產出 HTML 報告 → 下載
 """
 import os
 import sys
@@ -25,7 +25,7 @@ st.set_page_config(
 )
 
 st.title("📊 理事會財務分析報告產生器")
-st.markdown("上傳資料檔案，選擇合作社，一鍵產出 HTML 報告。")
+st.markdown("上傳資料檔案，選擇儲互社，一鍵產出 HTML 報告。")
 
 # ── 檔案上傳 ──────────────────────────────────────────────────
 st.markdown("### 📂 上傳資料檔案")
@@ -49,7 +49,7 @@ if xls_file is None:
     st.markdown("""
     1. 先從「下載工具」下載 **資料庫.xlsx** 和 **exported_data.csv**
     2. 將兩個檔案上傳到此頁面
-    3. 選擇合作社
+    3. 選擇儲互社
     4. 按「產生報告」下載 HTML
     """)
     st.stop()
@@ -67,11 +67,11 @@ with st.spinner("載入資料中…"):
         st.error(f"載入失敗：{e}")
         st.stop()
 
-# ── 合作社選擇 ────────────────────────────────────────────────
+# ── 儲互社選擇 ────────────────────────────────────────────────
 region = st.selectbox("選擇區域", list(REGIONS.keys()))
 unions = REGIONS[region]
 union_names = [f"{s}（{i}）" for i, s in unions]
-selected = st.selectbox("選擇合作社", union_names, index=0)
+selected = st.selectbox("選擇儲互社", union_names, index=0)
 
 sid = int(selected.split("（")[1].rstrip("）"))
 sname = selected.split("（")[0]
@@ -96,7 +96,7 @@ if not generate_btn:
 
 # ── 產生報告 ──────────────────────────────────────────────────
 with st.status(f"⏳ 正在產生 {sname_full} 報告…", expanded=True) as status:
-    st.write("🔍 提取合作社數據…")
+    st.write("🔍 提取儲互社數據…")
     try:
         d = extract_union_data(df_m, df_l, df_csv, str(sid))
     except Exception as e:
