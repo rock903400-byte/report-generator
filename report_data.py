@@ -48,7 +48,7 @@ def load_data_from_bytes(excel_bytes, csv_bytes=None):
     df_csv = pd.DataFrame()
     if csv_bytes:
         try:
-            df_csv = pd.read_csv(io.BytesIO(csv_bytes), dtype={"社號": str, "年月": str})
+            df_csv = pd.read_csv(io.BytesIO(csv_bytes), encoding="utf-8-sig", dtype={"社號": str, "年月": str})
             df_csv["年月"] = df_csv["年月"].apply(convert_minguo_date)
             df_csv["當月金額"] = pd.to_numeric(df_csv["當月金額"], errors="coerce").fillna(0)
             df_csv["會計科目"] = df_csv["會計科目"].astype(str).str.replace(".0", "", regex=False)
@@ -106,7 +106,7 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
     eOvd   = get_value(union_l, "逾放比", T0)
     eLoan  = get_value(union_m, "貸放比", T0)
     eRate  = get_value(union_m, "儲蓄率", max_d)
-    eProv  = float(union_l.iloc[-1]["提撥率"]) if not union_l.empty else 0.0
+    eProv  = float(union_l["提撥率"].iloc[-1]) if not union_l.empty and "提撥率" in union_l.columns else 0.0
     memG   = safe_div(M0 - M1, M1)
     shrG   = safe_div(S0 - S1, S1)
 
@@ -171,6 +171,10 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
 def compute_ovd_stats(d):
     """逾放比統計摘要"""
     df = d["df_l"][["年月", "逾放比", "提撥率"]].copy()
+    if df.empty:
+        return dict(curr=0, avg12=0, hist_max=0, hist_max_d="", hist_min=0, hist_min_d="",
+                    months_warn=0, months_total=0, trend="無資料", trend_color="#64748B",
+                    prov_curr=0, coverage=0)
     WARN = THRESHOLDS["ovd_safe_line"]
     curr = float(df["逾放比"].iloc[-1])
     avg12 = float(df["逾放比"].tail(12).mean())

@@ -3,7 +3,6 @@ Plotly 圖表產生（參數化，與社別脫鉤）
 """
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from plotly.subplots import make_subplots
 from report_config import THRESHOLDS, THEME_BG, C, PLOTLY_CFG, fmt, fmt_pct, safe_div
 

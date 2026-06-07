@@ -27,30 +27,30 @@ st.title("📊 理事會財務分析報告產生器")
 st.markdown("上傳資料檔案，選擇合作社，一鍵產出 HTML 報告。")
 
 # ── 檔案上傳 ──────────────────────────────────────────────────
-with st.expander("📂 上傳資料檔案", expanded=True):
-    col1, col2 = st.columns(2)
-    with col1:
-        xls_file = st.file_uploader(
-            "資料庫.xlsx（必要）",
-            type=["xlsx"],
-            help="從「下載工具」下載的資料庫 Excel 檔案",
-        )
-    with col2:
-        csv_file = st.file_uploader(
-            "exported_data.csv（選填）",
-            type=["csv"],
-            help="PR019 財務科目明細，無 CSV 則跳過資產負債表等財務分析",
-        )
+st.markdown("### 📂 上傳資料檔案")
+col1, col2 = st.columns(2)
+with col1:
+    xls_file = st.file_uploader(
+        "資料庫.xlsx（必要）",
+        type=["xlsx"],
+        help="從「下載工具」下載的資料庫 Excel 檔案",
+    )
+with col2:
+    csv_file = st.file_uploader(
+        "exported_data.csv（選填）",
+        type=["csv"],
+        help="PR019 財務科目明細，無 CSV 則跳過資產負債表等財務分析",
+    )
 
 if xls_file is None:
     st.info("請先上傳「資料庫.xlsx」以開始使用。")
-    with st.expander("ℹ️ 使用說明"):
-        st.markdown("""
-        1. 先從「下載工具」下載 **資料庫.xlsx** 和 **exported_data.csv**
-        2. 將兩個檔案上傳到此頁面
-        3. 選擇合作社
-        4. 按「產生報告」下載 HTML
-        """)
+    st.markdown("### ℹ️ 使用說明")
+    st.markdown("""
+    1. 先從「下載工具」下載 **資料庫.xlsx** 和 **exported_data.csv**
+    2. 將兩個檔案上傳到此頁面
+    3. 選擇合作社
+    4. 按「產生報告」下載 HTML
+    """)
     st.stop()
 
 # ── 載入資料 ──────────────────────────────────────────────────
@@ -121,9 +121,7 @@ st.download_button(
 st.success(f"報告大小：{len(html) / 1024:.0f} KB")
 
 # ── 診斷摘要 ──────────────────────────────────────────────────
-with st.expander("📋 診斷結果摘要"):
-    st.markdown(f"**狀態：** {d['status']}")
-    st.markdown(f"**觸發事項：** {d['reason_text']}")
-    st.markdown(f"**貸放比：** {d['eLoan']*100:.1f}%　｜　**逾放比：** {d['eOvd']*100:.2f}%　｜　**開支比：** {d['R0']*100:.1f}%")
-
-
+st.markdown("### 📋 診斷結果摘要")
+st.markdown(f"**狀態：** {d['status']}")
+st.markdown(f"**觸發事項：** {d['reason_text']}")
+st.markdown(f"**貸放比：** {d['eLoan']*100:.1f}%　｜　**逾放比：** {d['eOvd']*100:.2f}%　｜　**開支比：** {d['R0']*100:.1f}%")

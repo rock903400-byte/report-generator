@@ -1,5 +1,13 @@
-# Byte-compiled
 __pycache__/
-*.py[cod]
-*.egg-info/
-.env
+*.pyc
+output/
+*.txt
+海星社_理事會報告.*
+鹿草社_理事會報告.*
+達邦財務分析報告_*.html
+app_report.py
+generate_report.py
+generate_dabang_report.py
+verify_data.py
+verify_full.py
+check_html.py

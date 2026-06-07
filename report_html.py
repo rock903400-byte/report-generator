@@ -42,7 +42,7 @@ def build_report(d, charts):
          "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%)",
          "good": 0.4 <= d['eLoan'] <= 0.8},
         {"label": "儲蓄率",  "value": fmt_pct(d['eRate']),
-         "sub": "存款 / 股金", "good": d['eRate'] >= 0.6},
+         "sub": "存款 / 股金", "good": d['eRate'] >= THRESHOLDS["savings_good"]},
         {"label": "逾放比",  "value": fmt_pct(d['eOvd']),
          "sub": f"{'警戒' if d['eOvd'] > 0.02 else '正常'} (警戒值 2%)",
          "good": d['eOvd'] <= 0.02},
@@ -50,7 +50,7 @@ def build_report(d, charts):
          "sub": f"{'虧損' if d['R0'] > 1.0 else '盈餘'} (損益平衡 100%)",
          "good": d['R0'] <= 1.0},
         {"label": "提撥率",  "value": fmt_pct(d['eProv']),
-         "sub": "備抵呆帳 / 逾期貸款", "good": d['eProv'] >= 0.01},
+         "sub": "備抵呆帳 / 逾期貸款", "good": d['eProv'] >= THRESHOLDS["provision_good"]},
         {"label": "診斷結果", "value": status,
          "sub": reason_text, "good": status.startswith("✅")},
     ]
@@ -85,6 +85,8 @@ def build_report(d, charts):
          "custom_color": ovd["trend_color"]},
         {"label": "最新提撥率",  "value": fmt_pct(ovd["prov_curr"]),
          "sub": "備抵呆帳 / 逾期貸款", "good": ovd["prov_curr"] >= ovd["curr"]},
+        {"label": "覆蓋率",     "value": fmt_pct(ovd["coverage"]),
+         "sub": "提撥率 / 逾放比", "good": ovd["coverage"] >= 1.0},
     ]
 
     def ovd_stat_card_html(card):
