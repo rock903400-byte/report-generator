@@ -85,8 +85,6 @@ def build_report(d, charts):
          "custom_color": ovd["trend_color"]},
         {"label": "最新提撥率",  "value": fmt_pct(ovd["prov_curr"]),
          "sub": "備抵呆帳 / 逾期貸款", "good": ovd["prov_curr"] >= ovd["curr"]},
-        {"label": "覆蓋率",     "value": fmt_pct(ovd["coverage"]),
-         "sub": "提撥率 / 逾放比", "good": ovd["coverage"] >= 1.0},
     ]
 
     def ovd_stat_card_html(card):
