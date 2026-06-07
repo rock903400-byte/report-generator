@@ -3,7 +3,7 @@ HTML 模板組裝（沿用達邦報告 layout）
 """
 from html import escape as html_escape
 from datetime import date
-from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct
+from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct, GEMINI_MODEL
 from report_data import compute_ovd_stats
 
 PLOTLY_JS_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
@@ -132,7 +132,7 @@ def build_report(d, charts, ai_analysis=None):
         ai_section = f"""<div class="ai-box">
     <h3>🤖 儲互社 AI 顧問分析</h3>
     <p style="line-height:1.8;color:#475569;white-space:pre-wrap">{escaped}</p>
-    <small style="color:#94A3B8;font-size:0.8rem">由 Gemini 2.5 Flash-Lite 產製，僅供參考</small>
+    <small style="color:#94A3B8;font-size:0.8rem">由 {GEMINI_MODEL} 產製，僅供參考</small>
   </div>"""
 
     html = f"""<!DOCTYPE html>
