@@ -3,6 +3,7 @@ HTML 模板組裝（沿用達邦報告 layout）
 """
 from datetime import date
 from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct
+from report_data import compute_ovd_stats
 
 PLOTLY_JS_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
 
@@ -66,7 +67,6 @@ def build_report(d, charts):
     kpi_html = "".join(kpi_card_html(c) for c in kpi_cards)
 
     # 逾放比統計摘要卡片
-    from report_data import compute_ovd_stats
     ovd = compute_ovd_stats(d)
     ovd_stat_cards = [
         {"label": "最新逾放比",  "value": fmt_pct(ovd["curr"]),

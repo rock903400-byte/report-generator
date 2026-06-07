@@ -1,7 +1,6 @@
 """
 報告工具全域配置
 """
-from datetime import date
 import pandas as pd
 
 # ── 33 社完整對照表 ──────────────────────────────────────────
