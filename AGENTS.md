@@ -1,100 +1,116 @@
 # AGENTS.md — 報告工具
 
-## Git 追蹤狀態（重要）
+## Git 追蹤（重要）
 
-**只有 8 個檔案會上 GitHub / Streamlit Cloud：**
+**僅 8 檔上 GitHub / Streamlit Cloud：**
 `app.py` `report_config.py` `report_data.py` `report_charts.py` `report_html.py` `report_ai.py` `requirements.txt` `AGENTS.md`
 
-**以下全部 gitignore，僅本機存在：**
+**僅本機存在（gitignored）：**
 `generate_report.py` `app_report.py` `app_cloud.py` `generate_dabang_report.py` `verify_data.py` `verify_full.py` `check_html.py` `output/` `.streamlit/secrets.toml`
 
-改完 `report_*.py` 或 `app.py` 後 `git add && git push`，Streamlit Cloud 1–3 分鐘自動部署。
+改 `report_*.py` 或 `app.py` → `git add && git push` → Streamlit Cloud 1–3 min 自動部署。
 
-## 兩套子系統
+## Entry Points
 
-| 系統 | 入口 | 備註 |
+| 系統 | 入口 | 用途 |
 |------|------|------|
-| **Plotly 新系統** | `app.py`（雲端）/ `app_report.py`（本機）/ `generate_report.py`（CLI） | 支援 33 社，可改 |
-| **舊靜態報告** | `generate_dabang_report.py` | **勿修改**，內嵌整套邏輯 |
+| 雲端 | `app.py` | Streamlit Cloud，上傳檔案 |
+| 本機 Streamlit | `app_report.py` | 讀 `../下載工具/` 檔 |
+| CLI | `generate_report.py` | 指令列批次產出 |
 
-## 常用指令
+所有入口走同一 `report_*.py` 鏈。
+
+## Module Flow
+
+```
+report_config.py   → config, REGIONS, THRESHOLDS, GEMINI_MODEL, fmt utils
+report_data.py     → load_data(), extract_union_data() → d dict
+report_charts.py   → generate_all_charts(d) → charts dict (Plotly HTML divs)
+report_ai.py       → analyze_with_gemini(d, api_key) → str | None
+report_html.py     → build_report(d, charts, ai_analysis=None) → HTML str
+```
+
+## CLI Commands
 
 ```bash
-# CLI（本機，gitignored）
-python generate_report.py --union 海星社
-python generate_report.py --union 3403
-python generate_report.py --union 百成 --region 雲林   # 同名社須指定區域
-python generate_report.py --union 海星社 --ai          # 附帶 AI 分析
-
-# Streamlit
-streamlit run app_report.py    # 本機（讀取 ../下載工具/ 檔案）
-streamlit run app.py           # 雲端模式（上傳檔案）
-
-# 驗證（本機，僅 3403 海星社，gitignored）
-python verify_data.py          # 10 項數據交叉驗證
-python check_html.py           # HTML 值檢查
+python generate_report.py --union 海星社        # 依社名
+python generate_report.py --union 3403           # 依社號
+python generate_report.py --union 百成 --region 雲林  # 同名社須指定區域
+python generate_report.py --union 海星社 --ai    # 附 AI 顧問分析
 ```
 
-## 模組流向
+## Verify（僅本機，gitignored，硬編碼 3403 海星社）
 
-```
-report_config.py   → 設定、THRESHOLDS、GEMINI_MODEL、轉換工具
-report_data.py     → load_data(), extract_union_data() → d dict
-report_charts.py   → generate_all_charts(d) → charts dict
-report_ai.py       → analyze_with_gemini(d, api_key) → str | None
-report_html.py     → build_report(d, charts, ai_analysis=None) → HTML
+```bash
+python verify_data.py   # 10 項 CSV 科目交叉驗證
+python check_html.py    # HTML 值一致性檢查
 ```
 
-## 百分比清洗（`_clean_excel` in `report_data.py`）
+No pyproject.toml, no lint/typecheck/formatter.
 
-| 欄位 | Excel 儲存 | 清洗規則 |
-|------|-----------|----------|
-| 儲蓄率 | `105.3`（= 105.3%） | `/100` if `abs(x)>1.0` |
-| 開支比 | `99.5`（= 99.5%） | `/100` if `abs(x)>5.0` |
-| 逾放比 | `0.054` | 不做除法 |
-| 貸放比 | `0.24` | 不做除法 |
+## 32 社
 
-Excel 欄位名稱錯位（iloc[5]=貸放比, iloc[6]=儲蓄率），新系統用名稱讀取已避開。
+- **雲林** 13 社：3201–3214（缺 3209）
+- **嘉義** 19 社：3301,3305,3307, 3401–3417（缺 3405）
+- 完整對照表在 `report_config.py:REGIONS`
+- 合併鍵**用社號**，不用社名（防更名）
 
-## 關鍵坑
+## Data Cleaning（`report_data.py:_clean_excel`）
 
-- **合併鍵用社號**，不用社名（防更名）
-- **民國年月** 5 碼 `11504` = 2026-04，`convert_minguo_date()` 轉 datetime
-- **CSV 讀取**強制 `encoding='utf-8-sig'`
-- **`st.expander` 禁止使用**（父層 UI 規範，高齡長輩友善）
-- **門檻值集中於 `THRESHOLDS` dict**（`report_config.py`），勿散落各檔案
-- **無 pyproject.toml**，無 lint/typecheck/formatter
-- **33 社**：雲林 13 社（3201-3214 缺 3209）、嘉義 20 社（詳 `../AGENTS.md`）
-- **驗證腳本全硬編碼 `3403`**，不可套用他社
-- **`html` 變數名衝突**：`report_html.py` 用 `from html import escape as html_escape`，避免與 f-string 區域變數 `html` 衝突
+| 欄位 | Excel 儲存 | 規則 |
+|------|-----------|------|
+| 儲蓄率 | `105.3`（=105.3%） | `/100` if `abs(x)>1.0` |
+| 開支比 | `99.5`（=99.5%） | `/100` if `abs(x)>5.0` |
+| 逾放比 | `0.054` | 不除 |
+| 貸放比 | `0.24` | 不除 |
 
-## AI 顧問分析（Gemini）
+Excel 欄位名稱錯位（iloc[5]=貸放比, iloc[6]=儲蓄率），新系統用名稱讀，已避開。
 
-`report_ai.py` 串接 Gemini 2.5 Flash-Lite，產出儲互社財務顧問分析。
-- 依賴環境變數 `GEMINI_API_KEY`（或 Streamlit Cloud `st.secrets`）
+## Key Pitfalls
+
+- **民國年月** 5 碼 `11504`=2026-04，`convert_minguo_date()` 轉 datetime
+- **CSV** 強制 `encoding='utf-8-sig'`
+- **`st.expander` 禁用**（高齡友善 UI 規範）
+- **`THRESHOLDS` dict** 集中在 `report_config.py`，勿散落
+- **`html` 變數衝突**：`report_html.py` `from html import escape as html_escape`
+- **`report_html.py`** 從 `report_config` 引入 `GEMINI_MODEL` 動態顯示在 AI 區塊 footer
+
+## AI Advisory（Gemini）
+
+`report_ai.py` 串接 Gemini API，目前使用 `gemini-3.5-flash`。
+- API key：環境變數 `GEMINI_API_KEY` 或 Streamlit Cloud `st.secrets.GEMINI_API_KEY`
+- `max_output_tokens=4096`
+- 套件：`google-genai`（新版 SDK，非已棄用 `google-generativeai`）
+- 免費額度 ~1500 RPD，33 社一次跑也才 33 次呼叫
+- 失敗不回傳錯誤，區塊不顯示
 - Streamlit 入口：勾選「啟用儲互社 AI 顧問分析」
 - CLI 入口：`--ai` flag
-- 失敗不回傳錯誤，區塊不顯示
-- 套件：`google-genai`（新版，非已棄用的 `google-generativeai`）
-- 免費額度：1500 RPD，單社 1 次呼叫綽綽有餘
+- 更換模型只需改 `report_config.py` `GEMINI_MODEL`，HTML footer 自動跟
 
-## 風險診斷（2/5 原則）
+## Risk Diagnosis（2/5 原則）
+
+`extract_union_data()` 中，滿足 ≥2 項為「重點輔導」：
 
 ```python
-# extract_union_data()，滿足 ≥2 項為「重點輔導」：
-c1 = 開支比連兩年 >1.0
-c2 = 貸放比 <0.1
-c3 = 逾放比 >0.5 and 逾期貸款增加
-c4 = 社員連三年衰退（M0<M1<M2<M3）
-c5 = 股金連三年衰退（S0<S1<S2<S3）
+c1 = 開支比連兩年 > 1.0
+c2 = 貸放比 < 0.1
+c3 = 逾放比 > 0.5 and 逾期貸款增加
+c4 = 社員連三年衰退 (M0<M1<M2<M3)
+c5 = 股金連三年衰退 (S0<S1<S2<S3)
 ```
 
-## 部署
+## Dependencies（`requirements.txt`）
+
+```
+pandas>=2.0  plotly>=5.18  streamlit>=1.28  openpyxl>=3.1  google-genai
+```
+
+## Deployment
 
 GitHub: `rock903400-byte/report-generator` → Streamlit Cloud（入口 `app.py`）
-網址：https://rock903400-byte-report-generator-app-8hwvwm.streamlit.app/
+URL: https://rock903400-byte-report-generator-app-8hwvwm.streamlit.app/
 
-## 參考
+## 參考外部檔案
 
 - `../AGENTS.md` — 全工作區架構、社號速查表
 - `../下載工具/AGENTS.md` — 百分比清洗原始邏輯
