@@ -50,7 +50,7 @@ THRESHOLDS = dict(
 )
 
 # ── Gemini AI ──────────────────────────────────────────────────
-GEMINI_MODEL = "gemini-2.5-flash-lite"
+GEMINI_MODEL = "gemini-3.5-flash"
 
 # ── 主題色 ────────────────────────────────────────────────────
 THEME_BG = "#F0F4F8"
