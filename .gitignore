@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 output/
 *.txt
+.streamlit/secrets.toml
 海星社_理事會報告.*
 鹿草社_理事會報告.*
 達邦財務分析報告_*.html
@@ -11,3 +12,4 @@ generate_dabang_report.py
 verify_data.py
 verify_full.py
 check_html.py
+app_cloud.py

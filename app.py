@@ -16,6 +16,7 @@ from report_config import REGIONS
 from report_data import load_data_from_bytes, extract_union_data
 from report_charts import generate_all_charts
 from report_html import build_report
+from report_ai import analyze_with_gemini
 
 st.set_page_config(
     page_title="理事會報告產生器",
@@ -81,6 +82,12 @@ data_end_str = data_end.strftime("%Y-%m") if pd.notna(data_end) else "—"
 col1, col2 = st.columns([3, 1])
 with col1:
     st.caption(f"📅 資料截至：{data_end_str}")
+
+ai_enabled = st.checkbox(
+    "🤖 啟用儲互社 AI 顧問分析", value=False,
+    help="由 Gemini 2.5 Flash 生成分析建議（約 3–8 秒）",
+)
+
 with col2:
     generate_btn = st.button("🚀 產生報告", type="primary", use_container_width=True)
 
@@ -103,8 +110,19 @@ with st.status(f"⏳ 正在產生 {sname_full} 報告…", expanded=True) as sta
         st.error(f"圖表生成失敗：{e}")
         st.stop()
 
+    ai_analysis = None
+    if ai_enabled:
+        api_key = st.secrets.get("GEMINI_API_KEY", "")
+        if api_key:
+            st.write("🤖 儲互社 AI 顧問分析中…")
+            ai_analysis = analyze_with_gemini(d, api_key)
+            if ai_analysis is None:
+                st.warning("AI 分析暫時無法使用")
+        else:
+            st.warning("未設定 GEMINI_API_KEY，AI 分析無法使用")
+
     st.write("📝 組裝報告…")
-    html = build_report(d, charts)
+    html = build_report(d, charts, ai_analysis)
 
     status.update(label=f"✅ {sname_full} 報告產生完成！", state="complete")
 

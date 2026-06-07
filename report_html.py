@@ -1,6 +1,7 @@
 """
 HTML 模板組裝（沿用達邦報告 layout）
 """
+from html import escape as html_escape
 from datetime import date
 from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct
 from report_data import compute_ovd_stats
@@ -18,7 +19,7 @@ def df_to_html_table(df):
       <tbody>{rows}</tbody>
     </table>"""
 
-def build_report(d, charts):
+def build_report(d, charts, ai_analysis=None):
     """組裝完整 HTML 報告字串"""
     s_name = d["s_name"]
     s_no = d["s_no"]
@@ -123,6 +124,16 @@ def build_report(d, charts):
         )
     else:
         note_spans = '<span style="color:#10B981;font-weight:700">✓ 無警示項目</span>'
+
+    # AI 顧問分析區塊
+    ai_section = ""
+    if ai_analysis:
+        escaped = html_escape(ai_analysis)
+        ai_section = f"""<div class="ai-box">
+    <h3>🤖 儲互社 AI 顧問分析</h3>
+    <p style="line-height:1.8;color:#475569;white-space:pre-wrap">{escaped}</p>
+    <small style="color:#94A3B8;font-size:0.8rem">由 Gemini 2.5 Flash-Lite 產製，僅供參考</small>
+  </div>"""
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-TW">
@@ -262,6 +273,20 @@ def build_report(d, charts):
       color: #475569;
       line-height: 1.8;
     }}
+    .ai-box {{
+      background: #EFF6FF;
+      border-left: 6px solid {C["blue"]};
+      border-radius: 14px;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }}
+    .ai-box h3 {{
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: {C["blue"]};
+      margin-bottom: 0.6rem;
+    }}
     .report-footer {{
       text-align: center;
       padding: 2rem;
@@ -309,6 +334,8 @@ def build_report(d, charts):
       {note_spans}
     </p>
   </div>
+
+  {ai_section}
 
   <h2 class="section-title">📌 關鍵指標一覽</h2>
   <div class="kpi-grid">
