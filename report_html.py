@@ -121,7 +121,7 @@ def build_report(d, charts, ai_analysis=None):
 
     def kpi_card_html(card):
         color = C["green"] if card["good"] else C["red"]
-        border = f"border-left: 5px solid {color};"
+        border = f"border-left: 6px solid {color};"
         return f"""<div class="kpi-card" style="{border}">
           <div class="kpi-label">{card['label']}</div>
           <div class="kpi-value" style="color:{color}">{card['value']}</div>
@@ -151,7 +151,7 @@ def build_report(d, charts, ai_analysis=None):
 
     def ovd_stat_card_html(card):
         color = card.get("custom_color") or (C["green"] if card["good"] else C["red"])
-        return f"""<div class="kpi-card" style="border-left:5px solid {color}">
+        return f"""<div class="kpi-card" style="border-left:6px solid {color}">
           <div class="kpi-label">{card['label']}</div>
           <div class="kpi-value" style="color:{color}">{card['value']}</div>
           <div class="kpi-sub">{card['sub']}</div>

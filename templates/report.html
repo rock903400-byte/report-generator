@@ -11,15 +11,17 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Noto Sans TC', sans-serif;
-      background: {{ THEME_BG }};
+      background: #F3F0EC;
       color: #1E293B;
       font-size: 16px;
       line-height: 1.6;
+      letter-spacing: 0.02em;
     }
     .report-header {
       background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
       color: #fff;
       padding: 2.5rem 3rem;
+      border-bottom: 4px solid {{ C.blue }};
     }
     .report-header h1 {
       font-size: 2.2rem;
@@ -50,8 +52,9 @@
       font-size: 1.5rem;
       font-weight: 700;
       color: #1E293B;
-      padding: 0.5rem 0 1rem;
-      border-bottom: 3px solid {{ C.blue }};
+      padding: 0.5rem 0 0.8rem 1rem;
+      border-left: 4px solid {{ C.blue }};
+      border-bottom: 1px solid #E6E2DD;
       margin-bottom: 1.5rem;
     }
     .kpi-grid {
@@ -64,7 +67,7 @@
       background: #fff;
       border-radius: 14px;
       padding: 1.2rem 1.4rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.09);
     }
     .kpi-label {
       font-size: 0.95rem;
@@ -95,13 +98,21 @@
     .chart-box {
       background: #fff;
       border-radius: 14px;
-      padding: 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      padding: 1.2rem;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.09);
+      border: 1px solid #E6E2DD;
     }
     .data-table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       font-size: 1.05rem;
+    }
+    .data-table thead th:first-child {
+      border-top-left-radius: 8px;
+    }
+    .data-table thead th:last-child {
+      border-top-right-radius: 8px;
     }
     .data-table th {
       background: #1E293B;
@@ -118,13 +129,16 @@
     .data-table tr:nth-child(even) td {
       background: #F8FAFC;
     }
+    .data-table tbody tr:hover td {
+      background: #F0EDEA;
+    }
     .risk-box {
       background: #fff;
       border-radius: 14px;
-      border-left: 6px solid {{ status_color }};
+      border-left: 8px solid {{ status_color }};
       padding: 1.2rem 1.5rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.09);
     }
     .risk-box h3 {
       font-size: 1.3rem;
@@ -162,7 +176,7 @@
       padding: 2rem;
       color: #94A3B8;
       font-size: 0.9rem;
-      border-top: 1px solid #E2E8F0;
+      border-top: 1px solid #D4CFC9;
       margin-top: 2rem;
     }
     @media (max-width: 768px) {
