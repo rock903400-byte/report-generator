@@ -8,18 +8,33 @@ from report_config import THRESHOLDS, THEME_BG, C, PLOTLY_CFG, fmt, fmt_pct, saf
 
 def style_fig(fig, title="", height=500):
     fig.update_layout(
-        title=dict(text=title, font=dict(size=22, color=C["text"]), x=0) if title else None,
-        plot_bgcolor=THEME_BG,
+        title=dict(text=title, font=dict(size=18, color=C["text"]), x=0, xanchor="left", pad=dict(l=8)) if title else None,
+        plot_bgcolor="#FFFFFF",
         paper_bgcolor=THEME_BG,
-        font=dict(size=15, color=C["text"]),
-        margin=dict(l=10, r=10, t=55, b=40),
+        font=dict(size=13, color=C["text"]),
+        margin=dict(l=55, r=25, t=50, b=55),
         height=height,
         dragmode=False,
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+            font=dict(size=13),
+        ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
+    fig.update_xaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0)",
+        showline=True, linecolor="rgba(0,0,0,0.12)", linewidth=1,
+        tickfont=dict(size=12), tickangle=-30,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.07)",
+        showline=False,
+        tickfont=dict(size=12),
+        zeroline=True, zerolinecolor="rgba(0,0,0,0.15)", zerolinewidth=1,
+    )
     return fig
 
 def to_html_div(fig):
@@ -31,26 +46,26 @@ def chart_member_capital_trend(d):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Bar(
         x=df["年月"], y=df["社員數"],
-        name="社員數", marker_color=C["blue"], opacity=0.55,
+        name="社員數", marker_color=C["blue"], opacity=0.82,
+        marker_line=dict(width=0),
         hovertemplate="%{x}<br>社員數：%{y:,} 人<extra></extra>",
-        width=0.5,
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["年月"], y=df["社員數"].rolling(3, min_periods=1).mean(),
         name="社員數 3M 均線", mode="lines",
-        line=dict(color=C["blue"], width=2.5),
+        line=dict(color="#1D4ED8", width=2.5),
         hovertemplate="%{x}<br>社員數 3M 均：%{y:,.0f} 人<extra></extra>",
     ), secondary_y=False)
     fig.add_trace(go.Bar(
         x=df["年月"], y=df["股金"],
-        name="股金", marker_color=C["green"], opacity=0.55,
+        name="股金", marker_color=C["green"], opacity=0.82,
+        marker_line=dict(width=0),
         hovertemplate="%{x}<br>股金：%{y:,.0f}<extra></extra>",
-        width=0.5,
     ), secondary_y=True)
     fig.add_trace(go.Scatter(
         x=df["年月"], y=df["股金"].rolling(3, min_periods=1).mean(),
         name="股金 3M 均線", mode="lines",
-        line=dict(color=C["green"], width=2.5, dash="dot"),
+        line=dict(color="#059669", width=2.5, dash="dot"),
         hovertemplate="%{x}<br>股金 3M 均：%{y:,.0f}<extra></extra>",
     ), secondary_y=True)
 
@@ -75,18 +90,24 @@ def chart_member_capital_trend(d):
     fig.update_layout(
         barmode="overlay",
         title=None,
-        plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15, color=C["text"]),
-        margin=dict(l=10, r=10, t=20, b=40),
-        height=400,
+        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]),
+        margin=dict(l=55, r=25, t=20, b=55),
+        height=420,
         dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+        ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)",
-                     title_text="社員數（人）", secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)",
-                     tickformat=".2s", title_text="股金（元）", secondary_y=True)
+    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
+                     showline=True, linecolor="rgba(0,0,0,0.12)",
+                     tickfont=dict(size=12), tickangle=-30)
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)",
+                     title_text="社員數（人）", tickfont=dict(size=12), secondary_y=False)
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)",
+                     tickformat=".2s", title_text="股金（元）",
+                     tickfont=dict(size=12), secondary_y=True)
     return to_html_div(fig)
 
 
@@ -96,29 +117,41 @@ def chart_loan_savings(d):
     fig.add_trace(go.Scatter(
         x=df["年月"], y=df["貸放比"],
         name="貸放比", mode="lines+markers",
-        line=dict(color=C["blue"], width=3),
-        marker=dict(size=6),
+        line=dict(color=C["blue"], width=2.5),
+        marker=dict(size=7, line=dict(width=2, color="white")),
+        fill="tozeroy", fillcolor="rgba(59,130,246,0.08)",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["年月"], y=df["儲蓄率"],
         name="儲蓄率", mode="lines+markers",
-        line=dict(color=C["green"], width=3, dash="dot"),
-        marker=dict(size=6),
+        line=dict(color=C["green"], width=2.5, dash="dot"),
+        marker=dict(size=7, line=dict(width=2, color="white")),
     ), secondary_y=True)
     fig.add_hline(y=THRESHOLDS["stable_loan_min"], line_dash="dash",
-                  line_color=C["red"], opacity=0.5, annotation_text="貸放比下限 40%")
+                  line_color=C["red"], opacity=0.6,
+                  annotation_text="貸放比下限 40%",
+                  annotation_font=dict(size=11, color=C["red"]))
     fig.add_hline(y=THRESHOLDS["stable_loan_max"], line_dash="dash",
-                  line_color=C["amber"], opacity=0.5, annotation_text="貸放比上限 80%")
+                  line_color=C["amber"], opacity=0.6,
+                  annotation_text="貸放比上限 80%",
+                  annotation_font=dict(size=11, color=C["amber"]))
     fig.update_layout(
         title=None,
-        plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
-        height=380, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
+        height=400, dragmode=False, hovermode="x unified",
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+        ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".1%", secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".1%", secondary_y=True)
+    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
+                     showline=True, linecolor="rgba(0,0,0,0.12)",
+                     tickfont=dict(size=12), tickangle=-30)
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
+                     tickfont=dict(size=12), secondary_y=False)
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
+                     tickfont=dict(size=12), secondary_y=True)
     return to_html_div(fig)
 
 
@@ -128,29 +161,41 @@ def chart_risk_trend(d):
     fig.add_trace(go.Scatter(
         x=df_o["年月"], y=df_o["逾放比"],
         name="逾放比", mode="lines+markers",
-        line=dict(color=C["red"], width=3),
-        marker=dict(size=6),
+        line=dict(color=C["red"], width=2.5),
+        marker=dict(size=7, line=dict(width=2, color="white")),
+        fill="tozeroy", fillcolor="rgba(239,68,68,0.08)",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df_o["年月"], y=df_o["開支比"],
         name="開支比", mode="lines+markers",
-        line=dict(color=C["indigo"], width=3, dash="dot"),
-        marker=dict(size=6),
+        line=dict(color=C["indigo"], width=2.5, dash="dot"),
+        marker=dict(size=7, line=dict(width=2, color="white")),
     ), secondary_y=True)
     fig.add_hline(y=THRESHOLDS["ovd_safe_line"], line_dash="dash",
-                  line_color=C["amber"], opacity=0.6, annotation_text="逾放比警戒 2%")
+                  line_color=C["amber"], opacity=0.7,
+                  annotation_text="逾放比警戒 2%",
+                  annotation_font=dict(size=11, color=C["amber"]))
     fig.add_hline(y=1.0, line_dash="dash", line_color=C["red"],
-                  opacity=0.5, annotation_text="開支比損益平衡 100%", secondary_y=True)
+                  opacity=0.6, annotation_text="開支比損益平衡 100%",
+                  annotation_font=dict(size=11, color=C["red"]),
+                  secondary_y=True)
     fig.update_layout(
         title=None,
-        plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
-        height=380, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
+        height=400, dragmode=False, hovermode="x unified",
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+        ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".2%", secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".1%", secondary_y=True)
+    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
+                     showline=True, linecolor="rgba(0,0,0,0.12)",
+                     tickfont=dict(size=12), tickangle=-30)
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".2%",
+                     tickfont=dict(size=12), secondary_y=False)
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
+                     tickfont=dict(size=12), secondary_y=True)
     return to_html_div(fig)
 
 
@@ -173,7 +218,8 @@ def chart_ovd_full_history(d):
         x=df["年月"], y=df["逾放比"],
         name="逾放比（月）", mode="lines+markers",
         line=dict(color=C["red"], width=2.5),
-        marker=dict(size=4),
+        marker=dict(size=5, line=dict(width=1.5, color="white")),
+        fill="tozeroy", fillcolor="rgba(239,68,68,0.06)",
     ))
     fig.add_trace(go.Scatter(
         x=df["年月"], y=df["3M均"],
@@ -221,31 +267,39 @@ def chart_ovd_amount(d):
     fig.add_trace(go.Bar(
         x=df["年月"], y=df["逾期貸款"],
         name="逾期貸款金額",
-        marker_color=C["red"], opacity=0.5,
+        marker_color=C["red"], opacity=0.75,
+        marker_line=dict(width=0),
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["年月"], y=df["逾放比"],
         name="逾放比",
         mode="lines+markers",
-        line=dict(color=C["amber"], width=3),
-        marker=dict(size=5),
+        line=dict(color=C["amber"], width=2.5),
+        marker=dict(size=7, line=dict(width=2, color="white")),
     ), secondary_y=True)
     fig.add_hline(y=THRESHOLDS["ovd_safe_line"], line_dash="dash",
                   line_color=C["red"], opacity=0.6,
-                  annotation_text="警戒線 2%", secondary_y=True)
+                  annotation_text="警戒線 2%",
+                  annotation_font=dict(size=11, color=C["red"]),
+                  secondary_y=True)
 
     fig.update_layout(
         title=None,
-        plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
-        height=400, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
+        height=420, dragmode=False, hovermode="x unified",
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+        ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
+    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
+                     showline=True, linecolor="rgba(0,0,0,0.12)",
+                     tickfont=dict(size=12), tickangle=-30)
     fig.update_yaxes(fixedrange=True, tickformat=".2s", title_text="逾期貸款（元）",
-                     gridcolor="rgba(0,0,0,0.05)", secondary_y=False)
+                     gridcolor="rgba(0,0,0,0.07)", tickfont=dict(size=12), secondary_y=False)
     fig.update_yaxes(fixedrange=True, tickformat=".2%", title_text="逾放比",
-                     gridcolor="rgba(0,0,0,0.05)", secondary_y=True)
+                     gridcolor="rgba(0,0,0,0.07)", tickfont=dict(size=12), secondary_y=True)
     return to_html_div(fig)
 
 
@@ -289,16 +343,17 @@ def chart_waterfall(d):
         name="", orientation="v",
         measure=measures,
         x=labels, y=values,
-        connector=dict(line=dict(color="rgba(0,0,0,0.2)", width=1)),
-        increasing=dict(marker=dict(color=C["green"])),
-        decreasing=dict(marker=dict(color=C["red"])),
-        totals=dict(marker=dict(color=C["blue"])),
-        text=[fmt(v) for v in values],
+        connector=dict(line=dict(color="rgba(0,0,0,0.25)", width=1.5, dash="dot")),
+        increasing=dict(marker=dict(color=C["green"], opacity=0.88, line=dict(width=0))),
+        decreasing=dict(marker=dict(color=C["red"],   opacity=0.88, line=dict(width=0))),
+        totals=dict(marker=dict(color=C["blue"],       opacity=0.92, line=dict(width=0))),
+        text=[fmt(abs(v)) for v in values],
         textposition="outside",
-        textfont=dict(size=13),
+        textfont=dict(size=12, color=C["text"]),
     ))
-    style_fig(fig, height=480)
+    style_fig(fig, height=500)
     fig.update_layout(showlegend=False)
+    fig.update_xaxes(tickangle=0)
     return to_html_div(fig)
 
 
@@ -321,25 +376,37 @@ def chart_annual_trend(d):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Bar(x=merged["年度"], y=merged["收入"], name="收入",
-                         marker_color=C["green"], opacity=0.8), secondary_y=False)
+                         marker_color=C["green"], opacity=0.88,
+                         marker_line=dict(width=0)), secondary_y=False)
     fig.add_trace(go.Bar(x=merged["年度"], y=merged["支出"], name="支出",
-                         marker_color=C["red"], opacity=0.8), secondary_y=False)
+                         marker_color=C["red"], opacity=0.88,
+                         marker_line=dict(width=0)), secondary_y=False)
     fig.add_trace(go.Scatter(x=merged["年度"], y=merged["開支比"],
                              name="開支比", mode="lines+markers",
-                             line=dict(color=C["blue"], width=3),
-                             marker=dict(size=8)), secondary_y=True)
+                             line=dict(color=C["blue"], width=2.5),
+                             marker=dict(size=9, line=dict(width=2, color="white"))),
+                  secondary_y=True)
     fig.add_hline(y=1.0, line_dash="dash", line_color=C["red"],
-                  opacity=0.5, annotation_text="損益平衡", secondary_y=True)
+                  opacity=0.6, annotation_text="損益平衡",
+                  annotation_font=dict(size=11, color=C["red"]),
+                  secondary_y=True)
     fig.update_layout(
         title=None,
-        barmode="group", plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
-        height=380, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        barmode="group", plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
+        height=400, dragmode=False, hovermode="x unified",
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+        ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", type="category")
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".2s", secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".1%", secondary_y=True)
+    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)", type="category",
+                     showline=True, linecolor="rgba(0,0,0,0.12)",
+                     tickfont=dict(size=12))
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".2s",
+                     tickfont=dict(size=12), secondary_y=False)
+    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
+                     tickfont=dict(size=12), secondary_y=True)
     return to_html_div(fig)
 
 
