@@ -102,15 +102,12 @@ def _md_to_html(text):
 
 
 def _is_ai_truncated(text):
-    """檢查 Gemini 回應是否被截斷"""
+    """檢查 Gemini 回應是否被技術性截斷（未閉合的 markdown）"""
     if not text or not text.strip():
         return True
     text = text.strip()
-    # 以未完成的 markdown 符號結尾
-    if text.endswith("**") or text.endswith("*") or text.endswith("：") or text.endswith("-"):
-        return True
-    # 正常回應應包含「建議」段落
-    if "建議" not in text:
+    # 僅在以未閉合 markdown 符號結尾時視為截斷
+    if text.endswith("**") or text.endswith("*") or text.endswith("-"):
         return True
     return False
 

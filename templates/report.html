@@ -10,18 +10,15 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #F5F0EB;
-      --card-bg: #FFFDFB;
-      --card-border: #EDE8E2;
-      --text: #1E293B;
+      --bg: #F0F4F8;
+      --card-bg: #FFFFFF;
+      --card-border: #E2E8F0;
+      --text: #0F172A;
       --text-secondary: #475569;
       --text-muted: #94A3B8;
-      --header-bg: #1E293B;
-      --header-text: #F1F5F9;
-      --accent: #3B82F6;
-      --accent-light: #EFF6FF;
-      --shadow: 0 2px 12px rgba(60,40,20,0.06);
-      --shadow-hover: 0 6px 24px rgba(60,40,20,0.12);
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.07);
+      --shadow-hover: 0 4px 6px rgba(0,0,0,0.07), 0 12px 30px rgba(0,0,0,0.11);
+      --radius: 14px;
     }
     body {
       font-family: 'Noto Sans TC', sans-serif;
@@ -32,10 +29,12 @@
       letter-spacing: 0.02em;
       -webkit-font-smoothing: antialiased;
     }
+
+    /* ── HEADER ─────────────────────────────────── */
     .report-header {
-      background: linear-gradient(135deg, #1E293B 0%, #334155 60%, #475569 100%);
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #334155 100%);
       color: #fff;
-      padding: 2.5rem 3rem;
+      padding: 2.8rem 3.5rem 2.5rem;
       border-bottom: 4px solid {{ C.blue }};
       position: relative;
       overflow: hidden;
@@ -43,23 +42,31 @@
     .report-header::before {
       content: "";
       position: absolute;
-      top: -50%;
-      right: -10%;
-      width: 400px;
-      height: 400px;
-      background: rgba(255,255,255,0.03);
+      top: -60%; right: -8%;
+      width: 520px; height: 520px;
+      background: rgba(59,130,246,0.10);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .report-header::after {
+      content: "";
+      position: absolute;
+      bottom: -80%; left: 3%;
+      width: 220px; height: 220px;
+      background: rgba(255,255,255,0.04);
       border-radius: 50%;
       pointer-events: none;
     }
     .report-header h1 {
-      font-size: 2.2rem;
+      font-size: 2.3rem;
       font-weight: 900;
-      letter-spacing: 0.02em;
-      margin-bottom: 0.5rem;
+      letter-spacing: 0.01em;
+      margin-bottom: 0.6rem;
       position: relative;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .report-header .meta {
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: #94A3B8;
       font-weight: 500;
       position: relative;
@@ -68,108 +75,114 @@
       display: inline-block;
       background: {{ status_color }};
       color: #fff;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      padding: 6px 18px;
+      padding: 7px 22px;
       border-radius: 100px;
-      margin-top: 0.8rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      margin-top: 1rem;
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.15), 0 6px 20px rgba(0,0,0,0.25);
       position: relative;
+      letter-spacing: 0.05em;
     }
+
+    /* ── CONTAINER ──────────────────────────────── */
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem 1.5rem;
+      padding: 2.5rem 1.5rem;
     }
+
+    /* ── SECTION TITLE ──────────────────────────── */
     .section-title {
-      font-size: 1.45rem;
-      font-weight: 700;
+      font-size: 1.4rem;
+      font-weight: 800;
       color: var(--text);
-      padding: 0.5rem 0 0.8rem 1rem;
-      border-left: 4px solid {{ C.blue }};
-      border-bottom: 1px solid var(--card-border);
+      padding: 0.7rem 1.2rem;
+      border-left: 5px solid {{ C.blue }};
+      border-radius: 0 8px 8px 0;
+      background: linear-gradient(90deg, rgba(59,130,246,0.07) 0%, transparent 70%);
       margin-bottom: 1.5rem;
-      margin-top: 2.5rem;
+      margin-top: 2.8rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      letter-spacing: 0.01em;
     }
-    .section-title:first-of-type {
-      margin-top: 0;
-    }
+    .section-title:first-of-type { margin-top: 0; }
+
+    /* ── KPI CARDS ──────────────────────────────── */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 1.1rem;
       margin-bottom: 2.5rem;
     }
     .kpi-card {
       background: var(--card-bg);
-      border-radius: 12px;
-      padding: 1.2rem 1.4rem;
+      border-radius: var(--radius);
+      padding: 1.3rem 1.4rem 1.2rem;
       box-shadow: var(--shadow);
       border: 1px solid var(--card-border);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       position: relative;
       overflow: hidden;
     }
-    .kpi-card::after {
+    .kpi-card::before {
       content: "";
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
+      bottom: 0; left: 0;
+      width: 100%; height: 4px;
       background: currentColor;
-      opacity: 0.1;
+      opacity: 0.55;
     }
     .kpi-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
       box-shadow: var(--shadow-hover);
     }
     .kpi-label {
-      font-size: 0.9rem;
-      font-weight: 600;
+      font-size: 0.82rem;
+      font-weight: 700;
       color: var(--text-muted);
-      margin-bottom: 0.4rem;
-      letter-spacing: 0.03em;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
     .kpi-value {
-      font-size: 1.9rem;
+      font-size: 2.1rem;
       font-weight: 900;
-      line-height: 1.2;
+      line-height: 1.1;
       word-break: break-all;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
     }
     .kpi-sub {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
-      margin-top: 0.35rem;
+      margin-top: 0.45rem;
       font-weight: 500;
     }
+
+    /* ── CHART ──────────────────────────────────── */
     .chart-grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
       margin-bottom: 2rem;
     }
-    .chart-full {
-      margin-bottom: 2rem;
-    }
+    .chart-full { margin-bottom: 2rem; }
     .chart-box {
       background: var(--card-bg);
-      border-radius: 12px;
-      padding: 1.2rem;
+      border-radius: var(--radius);
+      padding: 1.3rem;
       box-shadow: var(--shadow);
       border: 1px solid var(--card-border);
       transition: box-shadow 0.2s ease;
     }
-    .chart-box:hover {
-      box-shadow: var(--shadow-hover);
-    }
+    .chart-box:hover { box-shadow: var(--shadow-hover); }
+
+    /* ── DATA TABLE ─────────────────────────────── */
     .data-table-wrap {
       background: var(--card-bg);
-      border-radius: 12px;
+      border-radius: var(--radius);
       box-shadow: var(--shadow);
       border: 1px solid var(--card-border);
       overflow: hidden;
@@ -184,128 +197,143 @@
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      font-size: 1rem;
+      font-size: 0.97rem;
     }
-    .data-table thead {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-    .data-table thead th:first-child {
-      border-top-left-radius: 8px;
-    }
-    .data-table thead th:last-child {
-      border-top-right-radius: 8px;
-    }
+    .data-table thead { position: sticky; top: 0; z-index: 2; }
+    .data-table thead th:first-child { border-top-left-radius: 8px; }
+    .data-table thead th:last-child { border-top-right-radius: 8px; }
     .data-table th {
-      background: #1E293B;
+      background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
       color: #fff;
-      padding: 10px 12px;
+      padding: 11px 14px;
       text-align: center;
-      font-weight: 600;
-      font-size: 0.95rem;
-      letter-spacing: 0.03em;
+      font-weight: 700;
+      font-size: 0.88rem;
+      letter-spacing: 0.05em;
     }
     .data-table td {
       padding: 9px 12px;
       text-align: center;
-      border-bottom: 1px solid var(--card-border);
+      border-bottom: 1px solid #F1F5F9;
       font-weight: 500;
       color: var(--text-secondary);
     }
-    .data-table tbody tr:nth-child(even) td {
-      background: #FAF8F5;
+    .data-table td:first-child {
+      font-weight: 700;
+      color: var(--text);
     }
+    .data-table tbody tr:nth-child(even) td { background: #F8FAFC; }
     .data-table tbody tr:hover td {
-      background: #F5F0EB;
+      background: #EFF6FF;
       transition: background 0.15s ease;
     }
+
+    /* ── RISK BOX ───────────────────────────────── */
     .risk-box {
       background: var(--card-bg);
-      border-radius: 12px;
-      border-left: 6px solid {{ status_color }};
-      padding: 1.4rem 1.6rem;
+      border-radius: var(--radius);
+      padding: 1.5rem 1.8rem;
       margin-bottom: 2rem;
       box-shadow: var(--shadow);
       border: 1px solid var(--card-border);
-      border-left-width: 6px;
+      border-left: 6px solid {{ status_color }};
       position: relative;
     }
     .risk-box h3 {
-      font-size: 1.25rem;
-      font-weight: 700;
+      font-size: 1.2rem;
+      font-weight: 800;
       color: {{ status_color }};
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.8rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
     .risk-box h3::before {
       content: "⚠️";
-      font-size: 1.1rem;
-      filter: grayscale(0.3);
+      font-size: 1rem;
     }
     .risk-box p {
       color: var(--text-secondary);
-      line-height: 1.85;
-      font-size: 1.02rem;
+      line-height: 1.9;
+      font-size: 1rem;
     }
+
+    /* ── AI BOX ─────────────────────────────────── */
     .ai-box {
-      background: linear-gradient(135deg, #F8FAFF 0%, #F0F4FF 100%);
-      border-left: 6px solid {{ C.blue }};
-      border-radius: 12px;
-      padding: 1.4rem 1.6rem 1.2rem;
+      background: linear-gradient(135deg, #F0F7FF 0%, #EBF4FF 100%);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.8rem 1.3rem;
       margin-bottom: 2rem;
       box-shadow: var(--shadow);
-      border: 1px solid #DBEAFE;
-      border-left-width: 6px;
+      border: 1px solid #BFDBFE;
+      border-left: 6px solid {{ C.blue }};
       position: relative;
+      overflow: hidden;
+    }
+    .ai-box::after {
+      content: "AI";
+      position: absolute;
+      top: -0.5rem; right: 1.2rem;
+      font-size: 5rem;
+      font-weight: 900;
+      color: rgba(59,130,246,0.06);
+      letter-spacing: -0.05em;
+      pointer-events: none;
+      line-height: 1;
     }
     .ai-box h3 {
-      font-size: 1.25rem;
-      font-weight: 700;
+      font-size: 1.2rem;
+      font-weight: 800;
       color: {{ C.blue }};
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.8rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      position: relative;
     }
     .ai-box h3::before {
       content: "🤖";
-      font-size: 1.2rem;
+      font-size: 1.15rem;
     }
-    .ai-box ul, .ai-box ol {
-      padding-left: 1.4rem;
-      margin: 0.3rem 0;
-    }
-    .ai-box li {
-      margin-bottom: 0.3rem;
-    }
-    .ai-box p {
-      margin-bottom: 0.4rem;
-    }
-    .ai-box strong {
-      color: var(--text);
-      font-weight: 700;
-    }
+    .ai-box ul, .ai-box ol { padding-left: 1.4rem; margin: 0.4rem 0; }
+    .ai-box li { margin-bottom: 0.4rem; line-height: 1.75; }
+    .ai-box p { margin-bottom: 0.5rem; line-height: 1.75; }
+    .ai-box strong { color: #1E40AF; font-weight: 700; }
+
+    /* ── FOOTER ─────────────────────────────────── */
     .report-footer {
-      text-align: center;
-      padding: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 1.4rem 2rem;
       color: var(--text-muted);
-      font-size: 0.9rem;
-      border-top: 1px solid #D4CFC9;
+      font-size: 0.88rem;
+      border-top: 3px solid {{ C.blue }};
       margin-top: 2rem;
-      background: #EDE8E2;
+      background: #E8EDF3;
     }
+    .footer-left { line-height: 1.7; }
+    .footer-right {
+      font-size: 0.8rem;
+      color: #B0BAC8;
+      text-align: right;
+      line-height: 1.6;
+    }
+
+    /* ── RESPONSIVE ─────────────────────────────── */
     @media (max-width: 768px) {
       .chart-grid-2 { grid-template-columns: 1fr; gap: 1rem; }
-      .report-header { padding: 1.5rem; }
-      .report-header h1 { font-size: 1.6rem; }
-      .kpi-value { font-size: 1.5rem; }
+      .report-header { padding: 1.8rem 1.5rem; }
+      .report-header h1 { font-size: 1.7rem; }
+      .kpi-value { font-size: 1.6rem; }
       .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-      .kpi-card { padding: 1rem; }
-      .section-title { font-size: 1.25rem; }
-      .container { padding: 1.2rem 1rem; }
+      .kpi-card { padding: 1rem 1.1rem; }
+      .section-title { font-size: 1.2rem; }
+      .container { padding: 1.5rem 1rem; }
+      .report-footer { flex-direction: column; text-align: center; }
+      .footer-right { text-align: center; }
     }
     @media (min-width: 769px) and (max-width: 1024px) {
       .kpi-grid { grid-template-columns: repeat(3, 1fr); }
@@ -313,18 +341,19 @@
     }
     @media print {
       body { font-size: 12px; background: #fff; }
-      .report-header { padding: 1rem 1.5rem; background: #1E293B; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .report-header { padding: 1rem 1.5rem; background: #0F172A; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .report-header h1 { font-size: 1.4rem; }
       .kpi-card { box-shadow: none; border: 1px solid #CBD5E1; break-inside: avoid; }
-      .kpi-value { font-size: 1.4rem; }
+      .kpi-value { font-size: 1.5rem; }
       .chart-box { break-inside: avoid; box-shadow: none; border: 1px solid #CBD5E1; }
       .risk-box, .ai-box { box-shadow: none; break-inside: avoid; }
       .data-table-wrap { box-shadow: none; border: 1px solid #CBD5E1; }
-      .report-footer { position: fixed; bottom: 0; width: 100%; background: #EDE8E2; }
+      .report-footer { position: fixed; bottom: 0; width: 100%; background: #E8EDF3; border-top: 2px solid #3B82F6; }
       .section-title { margin-top: 1.5rem; }
       .kpi-grid { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
       .chart-grid-2 { grid-template-columns: 1fr 1fr; gap: 1rem; }
-      .ai-box { background: #F8FAFF; }
+      .ai-box { background: #EFF6FF; }
+      .ai-box::after { display: none; }
     }
   </style>
 </head>
@@ -392,8 +421,14 @@
 </div>
 
 <div class="report-footer">
-  本報告由系統自動產製 ｜ {{ report_date }}<br>
-  資料來源：{{ s_name }}（社號 {{ s_no }}）
+  <div class="footer-left">
+    本報告由系統自動產製 ｜ {{ report_date }}<br>
+    資料來源：{{ s_name }}（社號 {{ s_no }}）
+  </div>
+  <div class="footer-right">
+    台灣儲蓄互助社財務分析系統<br>
+    僅供內部決策參考
+  </div>
 </div>
 
 </body>
