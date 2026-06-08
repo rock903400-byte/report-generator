@@ -208,10 +208,7 @@
   </div>
 
   <h2 class="section-title">👥 社員數 & 股金趨勢</h2>
-  <div class="chart-grid-2">
-    <div class="chart-box">{{ charts.member_trend | safe }}</div>
-    <div class="chart-box">{{ charts.capital_trend | safe }}</div>
-  </div>
+  <div class="chart-full chart-box">{{ charts.member_capital_trend | safe }}</div>
 
   <h2 class="section-title">📉 資金運用 & 風險指標趨勢</h2>
   <div class="chart-grid-2">
