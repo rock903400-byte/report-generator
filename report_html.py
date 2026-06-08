@@ -1,12 +1,17 @@
 """
-HTML 模板組裝（沿用達邦報告 layout）
+HTML 模板組裝（使用 Jinja2 模板引擎）
 """
 from html import escape as html_escape
 from datetime import date
+from jinja2 import Environment, FileSystemLoader
 from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct, GEMINI_MODEL
 from report_data import compute_ovd_stats
 
 PLOTLY_JS_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
+
+_env = Environment(loader=FileSystemLoader("templates"))
+_template = _env.get_template("report.html")
+
 
 def df_to_html_table(df):
     rows = ""
@@ -18,6 +23,7 @@ def df_to_html_table(df):
       <thead><tr>{headers}</tr></thead>
       <tbody>{rows}</tbody>
     </table>"""
+
 
 def build_report(d, charts, ai_analysis=None):
     """組裝完整 HTML 報告字串"""
@@ -31,29 +37,29 @@ def build_report(d, charts, ai_analysis=None):
     data_end = max_d.strftime("%Y 年 %m 月")
     report_date = date.today().strftime("%Y 年 %m 月 %d 日")
 
-    # KPI 卡片（診斷→逾放比→貸放比→社員→股金→儲蓄率→開支比→提撥率）
+    # KPI 卡片（社員→股金→貸放比→儲蓄率→逾放比→開支比→提撥率→診斷結果）
     kpi_cards = [
-        {"label": "診斷結果", "value": status,
-         "sub": reason_text, "good": status.startswith("✅")},
-        {"label": "逾放比",  "value": fmt_pct(d['eOvd']),
-         "sub": f"{'警戒' if d['eOvd'] > 0.02 else '正常'} (警戒值 2%)",
-         "good": d['eOvd'] <= 0.02},
-        {"label": "貸放比",  "value": fmt_pct(d['eLoan']),
-         "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%)",
-         "good": 0.4 <= d['eLoan'] <= 0.8},
         {"label": "現有社員", "value": f"{int(d['curr_M']):,} 人",
          "sub": f"12M {'↑' if d['memG_curr'] >= 0 else '↓'} {abs(int(d['curr_M'] - d['M0'])):,} 人 ({fmt_pct(d['memG_curr'])})",
          "good": d['memG_curr'] >= 0},
         {"label": "現有股金", "value": fmt(d['curr_S']),
          "sub": f"12M {'↑' if d['shrG_curr'] >= 0 else '↓'} {fmt(abs(d['curr_S'] - d['S0']))} ({fmt_pct(d['shrG_curr'])})",
          "good": d['shrG_curr'] >= 0},
+        {"label": "貸放比",  "value": fmt_pct(d['eLoan']),
+         "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%)",
+         "good": 0.4 <= d['eLoan'] <= 0.8},
         {"label": "儲蓄率",  "value": fmt_pct(d['eRate']),
          "sub": "存款 / 股金", "good": d['eRate'] >= THRESHOLDS["savings_good"]},
+        {"label": "逾放比",  "value": fmt_pct(d['eOvd']),
+         "sub": f"{'警戒' if d['eOvd'] > 0.02 else '正常'} (警戒值 2%)",
+         "good": d['eOvd'] <= 0.02},
         {"label": "開支比(年)", "value": fmt_pct(d['R0']),
          "sub": f"{'虧損' if d['R0'] > 1.0 else '盈餘'} (損益平衡 100%)",
          "good": d['R0'] <= 1.0},
         {"label": "提撥率",  "value": fmt_pct(d['eProv']),
          "sub": "備抵呆帳 / 逾期貸款", "good": d['eProv'] >= THRESHOLDS["provision_good"]},
+        {"label": "診斷結果", "value": status,
+         "sub": reason_text, "good": status.startswith("✅")},
     ]
 
     def kpi_card_html(card):
@@ -135,248 +141,23 @@ def build_report(d, charts, ai_analysis=None):
     <small style="color:#94A3B8;font-size:0.8rem">由 {GEMINI_MODEL} 產製，僅供參考</small>
   </div>"""
 
-    html = f"""<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{s_name} 財務分析報告</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
-  <script src="{PLOTLY_JS_CDN}"></script>
-  <style>
-    *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{
-      font-family: 'Noto Sans TC', sans-serif;
-      background: {THEME_BG};
-      color: #1E293B;
-      font-size: 16px;
-      line-height: 1.6;
-    }}
-    .report-header {{
-      background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
-      color: #fff;
-      padding: 2.5rem 3rem;
-    }}
-    .report-header h1 {{
-      font-size: 2.2rem;
-      font-weight: 900;
-      letter-spacing: 0.02em;
-      margin-bottom: 0.5rem;
-    }}
-    .report-header .meta {{
-      font-size: 1rem;
-      color: #94A3B8;
-    }}
-    .status-badge {{
-      display: inline-block;
-      background: {status_color};
-      color: #fff;
-      font-size: 1.3rem;
-      font-weight: 700;
-      padding: 6px 18px;
-      border-radius: 100px;
-      margin-top: 0.8rem;
-    }}
-    .container {{
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-    }}
-    .section-title {{
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #1E293B;
-      padding: 0.5rem 0 1rem;
-      border-bottom: 3px solid {C["blue"]};
-      margin-bottom: 1.5rem;
-    }}
-    .kpi-grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2.5rem;
-    }}
-    .kpi-card {{
-      background: #fff;
-      border-radius: 14px;
-      padding: 1.2rem 1.4rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }}
-    .kpi-label {{
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #64748B;
-      margin-bottom: 0.4rem;
-    }}
-    .kpi-value {{
-      font-size: 2rem;
-      font-weight: 900;
-      line-height: 1.2;
-      word-break: break-all;
-    }}
-    .kpi-sub {{
-      font-size: 0.85rem;
-      color: #64748B;
-      margin-top: 0.3rem;
-    }}
-    .chart-grid-2 {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }}
-    .chart-full {{
-      margin-bottom: 2rem;
-    }}
-    .chart-box {{
-      background: #fff;
-      border-radius: 14px;
-      padding: 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }}
-    .data-table {{
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 1.05rem;
-    }}
-    .data-table th {{
-      background: #1E293B;
-      color: #fff;
-      padding: 10px 12px;
-      text-align: center;
-      font-weight: 600;
-    }}
-    .data-table td {{
-      padding: 9px 12px;
-      text-align: center;
-      border-bottom: 1px solid #E2E8F0;
-    }}
-    .data-table tr:nth-child(even) td {{
-      background: #F8FAFC;
-    }}
-    .risk-box {{
-      background: #fff;
-      border-radius: 14px;
-      border-left: 6px solid {status_color};
-      padding: 1.2rem 1.5rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }}
-    .risk-box h3 {{
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: {status_color};
-      margin-bottom: 0.6rem;
-    }}
-    .risk-box p {{
-      color: #475569;
-      line-height: 1.8;
-    }}
-    .ai-box {{
-      background: #EFF6FF;
-      border-left: 6px solid {C["blue"]};
-      border-radius: 14px;
-      padding: 1.2rem 1.5rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }}
-    .ai-box h3 {{
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: {C["blue"]};
-      margin-bottom: 0.6rem;
-    }}
-    .report-footer {{
-      text-align: center;
-      padding: 2rem;
-      color: #94A3B8;
-      font-size: 0.9rem;
-      border-top: 1px solid #E2E8F0;
-      margin-top: 2rem;
-    }}
-    @media (max-width: 768px) {{
-      .chart-grid-2 {{ grid-template-columns: 1fr; }}
-      .report-header {{ padding: 1.5rem; }}
-      .report-header h1 {{ font-size: 1.6rem; }}
-      .kpi-value {{ font-size: 1.5rem; }}
-    }}
-    @media print {{
-      body {{ font-size: 12px; }}
-      .report-header {{ padding: 1rem 1.5rem; }}
-      .report-header h1 {{ font-size: 1.4rem; }}
-      .kpi-card {{ box-shadow: none; border: 1px solid #CBD5E1; break-inside: avoid; }}
-      .kpi-value {{ font-size: 1.4rem; }}
-      .chart-box {{ break-inside: avoid; }}
-      .report-footer {{ position: fixed; bottom: 0; width: 100%; }}
-    }}
-  </style>
-</head>
-<body>
-
-<div class="report-header">
-  <h1>📊 {s_name} 財務分析報告</h1>
-  <div class="meta">社號：{s_no}　｜　資料截至：{data_end}　｜　報告產製：{report_date}</div>
-  <div class="status-badge">{status}</div>
-</div>
-
-<div class="container">
-
-  <h2 class="section-title">🔍 風險診斷摘要</h2>
-  <div class="risk-box">
-    <h3>{status}</h3>
-    <p>
-      <strong>觸發事項：</strong>{reason_text}<br>
-      風險診斷採「2/5 原則」，滿足以下任兩項即列為重點輔導：
-      連兩年虧損（開支比&gt;100%）、貸放比偏低（&lt;10%）、逾放比偏高且惡化、社員連三年衰退、股金連三年衰退。<br>
-      <br>
-      本次診斷觸發項目：
-      {note_spans}
-    </p>
-  </div>
-
-  {ai_section}
-
-  <h2 class="section-title">📌 關鍵指標一覽</h2>
-  <div class="kpi-grid">
-    {kpi_html}
-  </div>
-
-  <h2 class="section-title">👥 社員數 & 股金趨勢</h2>
-  <div class="chart-grid-2">
-    <div class="chart-box">{charts['member_trend']}</div>
-    <div class="chart-box">{charts['capital_trend']}</div>
-  </div>
-
-  <h2 class="section-title">📉 資金運用 & 風險指標趨勢</h2>
-  <div class="chart-grid-2">
-    <div class="chart-box">{charts['loan_savings']}</div>
-    <div class="chart-box">{charts['risk_trend']}</div>
-  </div>
-
-  <h2 class="section-title">🔬 逾放比深度分析</h2>
-  <div class="kpi-grid" style="margin-bottom:1.5rem">{ovd_stats_html}</div>
-  <div class="chart-full chart-box" style="margin-bottom:1.5rem">{charts['ovd_full_history']}</div>
-  <div class="chart-full chart-box" style="margin-bottom:2rem">{charts['ovd_amount']}</div>
-
-  <h2 class="section-title">💰 財務科目分析</h2>
-  <div class="chart-full chart-box">{charts['balance_sheet']}</div>
-  <div class="chart-full chart-box" style="margin-top:1.5rem">{charts['annual_trend']}</div>
-  <div class="chart-full chart-box" style="margin-top:1.5rem">{charts['waterfall']}</div>
-
-  <h2 class="section-title">📋 近 12 期社務資料</h2>
-  <div class="chart-box" style="overflow-x:auto;margin-bottom:2rem">{table_m_html}</div>
-
-  <h2 class="section-title">📋 近 12 期放款資料</h2>
-  <div class="chart-box" style="overflow-x:auto;margin-bottom:2rem">{table_l_html}</div>
-
-</div>
-
-<div class="report-footer">
-  本報告由系統自動產製 ｜ {report_date}<br>
-  資料來源：{s_name}（社號 {s_no}）
-</div>
-
-</body>
-</html>"""
-    return html
+    ctx = dict(
+        PLOTLY_JS_CDN=PLOTLY_JS_CDN,
+        THEME_BG=THEME_BG,
+        C=C,
+        s_name=s_name,
+        s_no=s_no,
+        data_end=data_end,
+        report_date=report_date,
+        status=status,
+        status_color=status_color,
+        reason_text=reason_text,
+        note_spans=note_spans,
+        ai_section=ai_section,
+        kpi_html=kpi_html,
+        ovd_stats_html=ovd_stats_html,
+        charts=charts,
+        table_m_html=table_m_html,
+        table_l_html=table_l_html,
+    )
+    return _template.render(ctx)

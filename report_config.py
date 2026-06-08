@@ -1,6 +1,7 @@
 """
 報告工具全域配置
 """
+import streamlit as st
 import pandas as pd
 
 # ── 33 社完整對照表 ──────────────────────────────────────────
@@ -41,13 +42,22 @@ def find_union(keyword):
 EXCEL_PATH = "../下載工具/資料庫.xlsx"
 CSV_PATH   = "../下載工具/exported_data.csv"
 
-# ── 門檻值（與 deploy/config.py 同步）────────────────────────
-THRESHOLDS = dict(
-    liquidity_loan=0.9, idle_loan=0.3,
-    stable_loan_min=0.4, stable_loan_max=0.8, ovd_safe_line=0.02,
-    high_risk_income_ratio=1.0, high_risk_loan_ratio=0.1, high_risk_ovd_ratio=0.5,
-    savings_good=0.6, provision_good=0.01,
-)
+# ── 門檻值（從 st.secrets 讀取，與 deploy 同步；本機無 secrets 時用預設值）─────
+_THR_DEFAULTS = {
+    "high_risk_ovd": 0.1, "liquidity_loan": 0.9, "idle_loan": 0.3,
+    "stable_loan_min": 0.4, "stable_loan_max": 0.8, "ovd_safe_line": 0.02,
+    "high_risk_income_ratio": 1.0, "high_risk_loan_ratio": 0.1, "high_risk_ovd_ratio": 0.5,
+    "savings_good": 0.6, "provision_good": 0.01,
+}
+
+def _load_thresholds():
+    try:
+        thr = st.secrets.get("thresholds", {})
+    except Exception:
+        thr = {}
+    return {k: thr.get(k, d) for k, d in _THR_DEFAULTS.items()}
+
+THRESHOLDS = _load_thresholds()
 
 # ── Gemini AI ──────────────────────────────────────────────────
 GEMINI_MODEL = "gemini-3.5-flash"
