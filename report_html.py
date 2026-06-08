@@ -166,8 +166,7 @@ def build_report(d, charts, ai_analysis=None):
 
     def kpi_card_html(card):
         color = C["green"] if card["good"] else C["red"]
-        border = f"border-left: 6px solid {color};"
-        return f"""<div class="kpi-card" style="{border}">
+        return f"""<div class="kpi-card" style="--card-color:{color}">
           <div class="kpi-label">{card['label']}</div>
           <div class="kpi-value" style="color:{color}">{card['value']}</div>
           <div class="kpi-sub">{card['sub']}</div>
@@ -196,7 +195,7 @@ def build_report(d, charts, ai_analysis=None):
 
     def ovd_stat_card_html(card):
         color = card.get("custom_color") or (C["green"] if card["good"] else C["red"])
-        return f"""<div class="kpi-card" style="border-left:6px solid {color}">
+        return f"""<div class="kpi-card" style="--card-color:{color}">
           <div class="kpi-label">{card['label']}</div>
           <div class="kpi-value" style="color:{color}">{card['value']}</div>
           <div class="kpi-sub">{card['sub']}</div>
@@ -236,7 +235,7 @@ def build_report(d, charts, ai_analysis=None):
     if ai_analysis:
         if _is_ai_truncated(ai_analysis):
             ai_section = f"""<div class="ai-box">
-    <h3>🤖 儲互社 AI 顧問分析</h3>
+    <h3>儲互社 AI 顧問分析</h3>
     <div style="line-height:1.65;color:#475569">
       <p>⚠️ AI 分析回應似乎被截斷或不完整，請重新產生報告或略過此分析。</p>
       <p style="color:#94A3B8;font-size:0.85rem;margin-top:0.5rem">原始回應片段：{html_escape(ai_analysis[:120])}…</p>
@@ -248,7 +247,7 @@ def build_report(d, charts, ai_analysis=None):
         else:
             ai_html = _md_to_html(ai_analysis)
             ai_section = f"""<div class="ai-box">
-    <h3>🤖 儲互社 AI 顧問分析</h3>
+    <h3>儲互社 AI 顧問分析</h3>
     <div style="line-height:1.65;color:#475569">{ai_html}</div>
     <div style="margin-top:0.8rem;padding-top:0.6rem;border-top:1px solid #DBEAFE">
       <small style="color:#94A3B8;font-size:0.78rem">由 {GEMINI_MODEL} 產製，僅供參考</small>
