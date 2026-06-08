@@ -59,7 +59,8 @@ def call_gemini(prompt, api_key):
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.4,
-            max_output_tokens=600,
+            max_output_tokens=2048,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         ),
     )
     return response.text

@@ -106,8 +106,8 @@ def _is_ai_truncated(text):
     if not text or not text.strip():
         return True
     text = text.strip()
-    # 僅在以未閉合 markdown 符號結尾時視為截斷
-    if text.endswith("**") or text.endswith("*") or text.endswith("-"):
+    # 以未閉合 markdown 或截斷訊號結尾（"："表示清單項目沒有值，是 API token 截斷）
+    if text.endswith("**") or text.endswith("*") or text.endswith("-") or text.endswith("："):
         return True
     return False
 
