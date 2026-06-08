@@ -46,21 +46,56 @@ def _clean_excel(df_m_raw, df_l_raw):
 
 def load_data_from_bytes(excel_bytes, csv_bytes=None):
     """從 BytesIO 載入資料（供雲端版使用）"""
-    with pd.ExcelFile(io.BytesIO(excel_bytes)) as xls:
-        df_m_raw = pd.read_excel(xls, sheet_name=SHEETS["MAIN"],   dtype={"社號": str, "年月": str})
-        df_l_raw = pd.read_excel(xls, sheet_name=SHEETS["LOAN"],   dtype={"社號": str, "年月": str})
-        df_r_raw = pd.read_excel(xls, sheet_name=SHEETS["REGION"], dtype={"社名": str, "區域": str, "密碼": str})
-        df_l_raw = df_l_raw.rename(columns={"收支比": "開支比"})
+    try:
+        with pd.ExcelFile(io.BytesIO(excel_bytes)) as xls:
+            sheet_names = xls.sheet_names
+            for key, name in SHEETS.items():
+                if name not in sheet_names:
+                    raise ValueError(
+                        f"Excel 缺少工作表「{name}」（應為 {list(SHEETS.values())}）"
+                    )
+            df_m_raw = pd.read_excel(xls, sheet_name=SHEETS["MAIN"],   dtype={"社號": str, "年月": str})
+            df_l_raw = pd.read_excel(xls, sheet_name=SHEETS["LOAN"],   dtype={"社號": str, "年月": str})
+            df_r_raw = pd.read_excel(xls, sheet_name=SHEETS["REGION"], dtype={"社名": str, "區域": str, "密碼": str})
+    except ValueError:
+        raise
+    except Exception as e:
+        raise ValueError(
+            f"無法讀取 Excel 檔案，請確認上傳的是正確的「資料庫.xlsx」（{e}）"
+        ) from e
+
+    df_l_raw = df_l_raw.rename(columns={"收支比": "開支比"})
+    required_m = {"社號", "社名", "年月", "社員數", "股金", "貸放比", "儲蓄率"}
+    missing_m = required_m - set(df_m_raw.columns)
+    if missing_m:
+        raise ValueError(
+            f"社務資料工作表缺少欄位：{', '.join(sorted(missing_m))}"
+        )
+    required_l = {"社號", "社名", "年月", "開支比", "逾放比", "逾期貸款"}
+    missing_l = required_l - set(df_l_raw.columns)
+    if missing_l:
+        raise ValueError(
+            f"放款資料工作表缺少欄位：{', '.join(sorted(missing_l))}"
+        )
 
     df_m, df_l = _clean_excel(df_m_raw, df_l_raw)
+
+    if df_m.empty:
+        raise ValueError("清洗後社務資料無有效資料，請檢查「年月」格式是否正確（應為 5 碼民國年月，如 11504）")
 
     df_csv = pd.DataFrame()
     if csv_bytes:
         try:
             df_csv = pd.read_csv(io.BytesIO(csv_bytes), encoding="utf-8-sig", dtype={"社號": str, "年月": str})
-            df_csv["年月"] = df_csv["年月"].apply(convert_minguo_date)
-            df_csv["當月金額"] = pd.to_numeric(df_csv["當月金額"], errors="coerce").fillna(0)
-            df_csv["會計科目"] = df_csv["會計科目"].astype(str).str.replace(".0", "", regex=False)
+            required_csv = {"年月", "社號", "會計科目", "當月金額"}
+            if not required_csv.issubset(set(df_csv.columns)):
+                missing_csv = required_csv - set(df_csv.columns)
+                print(f"  CSV 缺少必要欄位：{', '.join(sorted(missing_csv))}，跳過 CSV")
+                df_csv = pd.DataFrame()
+            else:
+                df_csv["年月"] = df_csv["年月"].apply(convert_minguo_date)
+                df_csv["當月金額"] = pd.to_numeric(df_csv["當月金額"], errors="coerce").fillna(0)
+                df_csv["會計科目"] = df_csv["會計科目"].astype(str).str.replace(".0", "", regex=False)
         except Exception as e:
             print(f"  CSV 讀取失敗：{e}")
 
@@ -173,7 +208,19 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
 
 def compute_ovd_stats(d):
     """逾放比統計摘要"""
-    df = d["df_l"][["年月", "逾放比", "提撥率"]].copy()
+    df_l = d["df_l"]
+    if df_l.empty or not {"年月", "逾放比", "提撥率"}.issubset(df_l.columns):
+        empty = dict(curr=0, avg12=0, hist_max=0, hist_max_d="", hist_min=0, hist_min_d="",
+                     months_warn=0, months_total=0, trend="無資料", trend_color="#64748B",
+                     prov_curr=0, coverage=0)
+        if df_l.empty:
+            return empty
+        try:
+            df = df_l[["年月", "逾放比", "提撥率"]].copy()
+        except KeyError:
+            return empty
+    else:
+        df = df_l[["年月", "逾放比", "提撥率"]].copy()
     if df.empty:
         return dict(curr=0, avg12=0, hist_max=0, hist_max_d="", hist_min=0, hist_min_d="",
                     months_warn=0, months_total=0, trend="無資料", trend_color="#64748B",

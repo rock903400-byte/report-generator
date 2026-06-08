@@ -12,7 +12,7 @@ from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from report_config import REGIONS
+from report_config import REGIONS, GEMINI_MODEL
 from report_data import load_data_from_bytes, extract_union_data
 from report_charts import generate_all_charts
 from report_html import build_report
@@ -23,6 +23,22 @@ st.set_page_config(
     page_icon="📊",
     layout="centered",
 )
+
+# ── 簡易身分驗證（選用）────────────────────────────────────────
+_expected_pw = st.secrets.get("APP_PASSWORD", "")
+if _expected_pw:
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if not st.session_state.authenticated:
+        st.title("🔒 理事會報告產生器")
+        pw = st.text_input("請輸入密碼", type="password")
+        if pw:
+            if pw == _expected_pw:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("密碼錯誤")
+        st.stop()
 
 st.title("📊 理事會財務分析報告產生器")
 st.markdown("上傳資料檔案，選擇儲互社，一鍵產出 HTML 報告。")
@@ -85,7 +101,7 @@ with col1:
 
 ai_enabled = st.checkbox(
     "🤖 啟用儲互社 AI 顧問分析", value=False,
-    help="由 Gemini 2.5 Flash 生成分析建議（約 3–8 秒）",
+    help=f"由 {GEMINI_MODEL} 生成分析建議（約 3–8 秒）",
 )
 
 with col2:
