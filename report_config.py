@@ -1,8 +1,17 @@
 """
 報告工具全域配置
 """
+import sys
+from pathlib import Path
+_root = str(Path(__file__).resolve().parent)
+if _root not in sys.path:
+    sys.path.insert(0, _root)
+
 import streamlit as st
-import pandas as pd
+
+from common.thresholds import load_thresholds, DEFAULT_THRESHOLDS
+from common.dates import convert_minguo_date, get_value
+from common.utils import safe_div, format_large_number as fmt, fmt_pct
 
 # ── 33 社完整對照表 ──────────────────────────────────────────
 REGIONS = {
@@ -43,19 +52,11 @@ EXCEL_PATH = "../下載工具/資料庫.xlsx"
 CSV_PATH   = "../下載工具/exported_data.csv"
 
 # ── 門檻值（從 st.secrets 讀取，與 deploy 同步；本機無 secrets 時用預設值）─────
-_THR_DEFAULTS = {
-    "high_risk_ovd": 0.1, "liquidity_loan": 0.9, "idle_loan": 0.3,
-    "stable_loan_min": 0.4, "stable_loan_max": 0.8, "ovd_safe_line": 0.02,
-    "high_risk_income_ratio": 1.0, "high_risk_loan_ratio": 0.1, "high_risk_ovd_ratio": 0.5,
-    "savings_good": 0.6, "provision_good": 0.01,
-}
-
 def _load_thresholds():
     try:
-        thr = st.secrets.get("thresholds", {})
+        return load_thresholds(st.secrets)
     except Exception:
-        thr = {}
-    return {k: thr.get(k, d) for k, d in _THR_DEFAULTS.items()}
+        return load_thresholds({})
 
 THRESHOLDS = _load_thresholds()
 
@@ -81,47 +82,5 @@ PLOTLY_CFG = dict(
     toImageButtonOptions={"format": "png", "scale": 3},
 )
 
-# ── 工具函式 ──────────────────────────────────────────────────
-def convert_minguo_date(val):
-    try:
-        s = str(int(float(str(val).strip())))
-        if len(s) == 5:
-            yr, mo = int(s[:3]) + 1911, int(s[3:])
-        elif len(s) == 4:
-            yr, mo = int(s[:2]) + 1911, int(s[2:])
-        else:
-            return pd.NaT
-        return pd.to_datetime(f"{yr}-{mo:02d}-01")
-    except Exception:
-        return pd.NaT
-
-def safe_div(n, d):
-    try:
-        if d and not pd.isna(d) and d != 0:
-            return n / d
-    except Exception:
-        pass
-    return 0.0
-
-def fmt(n, decimals=2):
-    try:
-        n = float(n)
-        if abs(n) >= 1e8:
-            return f"{n/1e8:.{decimals}f} 億元"
-        if abs(n) >= 1e4:
-            return f"{n/1e4:.0f} 萬元"
-        return f"{n:,.0f} 元"
-    except Exception:
-        return str(n)
-
-def fmt_pct(v, decimals=1):
-    try:
-        return f"{float(v)*100:.{decimals}f}%"
-    except Exception:
-        return "—"
-
-def get_value(df, col, d):
-    if df.empty:
-        return 0.0
-    sub = df[df["年月"] <= d]
-    return float(sub[col].iloc[-1]) if not sub.empty else float(df[col].iloc[0])
+# ── 工具函式 (re-exported from common) ───────────────────────
+# convert_minguo_date, safe_div, fmt, fmt_pct, get_value 均由上方 import 提供

@@ -1,12 +1,20 @@
 """
 讀取資料庫.xlsx + exported_data.csv，依社號過濾與計算指標
 """
+import sys
+from pathlib import Path
+_root = str(Path(__file__).resolve().parent)
+if _root not in sys.path:
+    sys.path.insert(0, _root)
+
 import io
 import pandas as pd
 from report_config import (
     EXCEL_PATH, CSV_PATH, THRESHOLDS,
     convert_minguo_date, safe_div, get_value,
 )
+from common.cleaning import defensive_clean_series
+from common.classifier import classify
 
 SHEETS = {
     "MAIN":   "社務及資金運用情形",
@@ -22,13 +30,14 @@ def _clean_excel(df_m_raw, df_l_raw):
     for col in ["社員數", "股金", "貸放比"]:
         df_m_raw[col] = pd.to_numeric(df_m_raw[col], errors="coerce").fillna(0)
 
-    df_m_raw["儲蓄率"] = pd.to_numeric(df_m_raw["儲蓄率"], errors="coerce").fillna(0)
-    df_m_raw["儲蓄率"] = df_m_raw["儲蓄率"].apply(lambda x: x / 100 if abs(x) > 1.0 else x)
-
+    df_m_raw["儲蓄率"] = defensive_clean_series(
+        pd.to_numeric(df_m_raw["儲蓄率"], errors="coerce").fillna(0), "儲蓄率"
+    )
     df_l_raw["逾放比"]   = pd.to_numeric(df_l_raw["逾放比"],   errors="coerce").fillna(0)
     df_l_raw["逾期貸款"] = pd.to_numeric(df_l_raw["逾期貸款"], errors="coerce").fillna(0)
-    df_l_raw["開支比"]   = pd.to_numeric(df_l_raw["開支比"],   errors="coerce").fillna(0)
-    df_l_raw["開支比"]   = df_l_raw["開支比"].apply(lambda x: x / 100 if abs(x) > 5.0 else x)
+    df_l_raw["開支比"]   = defensive_clean_series(
+        pd.to_numeric(df_l_raw["開支比"], errors="coerce").fillna(0), "開支比"
+    )
     df_l_raw["提撥率"]   = pd.to_numeric(df_l_raw.get("提撥率", 0), errors="coerce").fillna(0)
 
     df_m = df_m_raw.dropna(subset=["年月"]).sort_values(["社號", "年月"])
@@ -117,40 +126,34 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
     eOvd_12m  = get_value(union_l, "逾放比", T_12M)
 
     # ── 風險診斷（2/5 原則）─────────────────────────────
-    flags = []
-    notes = []
+    STATUS_COLORS = {
+        "🚨 特別關懷": "#EF4444",
+        "⚠️ 流動性緊繃": "#F59E0B",
+        "💤 資金閒置": "#3B82F6",
+        "✅ 穩健模範": "#10B981",
+        "📊 一般狀態": "#64748B",
+    }
+    p = dict(M0=M0, M1=M1, M2=M2, M3=M3, S0=S0, S1=S1, S2=S2, S3=S3,
+             R0=R0, R1=R1, O0=O0, O1=O1, eOvd=eOvd, eLoan=eLoan,
+             sOvd=get_value(union_l, "逾放比", T1),
+             sLoan=get_value(union_m, "貸放比", T1),
+             memG=memG, shrG=shrG)
+    status, reason_text = classify(p, THRESHOLDS)
+    status_color = STATUS_COLORS.get(status, "#64748B")
+
+    # 保留 notes + risk_count 給模板用
     c1 = R0 > THRESHOLDS["high_risk_income_ratio"] and R1 > THRESHOLDS["high_risk_income_ratio"]
     c2 = eLoan < THRESHOLDS["high_risk_loan_ratio"]
     c3 = eOvd > THRESHOLDS["high_risk_ovd_ratio"] and O0 > O1
     c4 = M0 < M1 < M2 < M3
     c5 = S0 < S1 < S2 < S3
-    risk_count = sum([c1, c2, c3, c4, c5])
-
+    notes = []
     if c1: notes.append("連兩年虧損")
-    if c2: notes.append("貸放比偏低")
-    if c3: notes.append("逾放比偏高且惡化")
-    if c4: notes.append("社員連三年衰退")
+    if c2: notes.append("貸放比過低")
+    if c3: notes.append("高逾放且惡化")
+    if c4: notes.append("人數連三年衰退")
     if c5: notes.append("股金連三年衰退")
-
-    if risk_count >= 2:
-        status = "🚨 重點輔導"
-        status_color = "#EF4444"
-    elif eLoan > THRESHOLDS["liquidity_loan"] and shrG < 0:
-        status = "⚠️ 流動性緊繃"
-        status_color = "#F59E0B"
-    elif eLoan < THRESHOLDS["idle_loan"] and eOvd < THRESHOLDS["ovd_safe_line"]:
-        status = "💤 資金閒置"
-        status_color = "#3B82F6"
-    elif (memG >= 0 and shrG >= 0
-          and THRESHOLDS["stable_loan_min"] <= eLoan <= THRESHOLDS["stable_loan_max"]
-          and eOvd < THRESHOLDS["ovd_safe_line"]):
-        status = "✅ 穩健模範"
-        status_color = "#10B981"
-    else:
-        status = "📊 一般狀態"
-        status_color = "#64748B"
-
-    reason_text = "、".join(notes) if notes else "各項指標正常"
+    risk_count = sum([c1, c2, c3, c4, c5])
 
     return dict(
         s_no=s_no, s_name=s_name, max_d=max_d, min_d=min_d,
