@@ -8,7 +8,7 @@ from report_config import THRESHOLDS, THEME_BG, C, PLOTLY_CFG, fmt, fmt_pct, saf
 
 def style_fig(fig, title="", height=500):
     fig.update_layout(
-        title=dict(text=title, font=dict(size=22, color=C["text"]), x=0),
+        title=dict(text=title, font=dict(size=22, color=C["text"]), x=0) if title else None,
         plot_bgcolor=THEME_BG,
         paper_bgcolor=THEME_BG,
         font=dict(size=15, color=C["text"]),
@@ -16,7 +16,7 @@ def style_fig(fig, title="", height=500):
         height=height,
         dragmode=False,
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
     fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
     fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
@@ -110,11 +110,11 @@ def chart_loan_savings(d):
     fig.add_hline(y=THRESHOLDS["stable_loan_max"], line_dash="dash",
                   line_color=C["amber"], opacity=0.5, annotation_text="貸放比上限 80%")
     fig.update_layout(
-        title=dict(text="貸放比 / 儲蓄率趨勢", font=dict(size=22, color=C["text"]), x=0),
+        title=None,
         plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15), margin=dict(l=10, r=10, t=55, b=40),
+        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
         height=380, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
     fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
     fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".1%", secondary_y=False)
@@ -142,11 +142,11 @@ def chart_risk_trend(d):
     fig.add_hline(y=1.0, line_dash="dash", line_color=C["red"],
                   opacity=0.5, annotation_text="開支比損益平衡 100%", secondary_y=True)
     fig.update_layout(
-        title=dict(text="逾放比 / 開支比趨勢", font=dict(size=22, color=C["text"]), x=0),
+        title=None,
         plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15), margin=dict(l=10, r=10, t=55, b=40),
+        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
         height=380, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
     fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
     fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".2%", secondary_y=False)
@@ -210,7 +210,7 @@ def chart_ovd_full_history(d):
         showlegend=False,
     ))
 
-    style_fig(fig, "逾放比完整歷史趨勢", height=440)
+    style_fig(fig, height=440)
     fig.update_yaxes(tickformat=".2%", range=[0, y_max])
     return to_html_div(fig)
 
@@ -235,11 +235,11 @@ def chart_ovd_amount(d):
                   annotation_text="警戒線 2%", secondary_y=True)
 
     fig.update_layout(
-        title=dict(text="逾期貸款金額 vs 逾放比", font=dict(size=22, color=C["text"]), x=0),
+        title=None,
         plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15), margin=dict(l=10, r=10, t=55, b=40),
+        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
         height=400, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
     fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)")
     fig.update_yaxes(fixedrange=True, tickformat=".2s", title_text="逾期貸款（元）",
@@ -297,7 +297,7 @@ def chart_waterfall(d):
         textposition="outside",
         textfont=dict(size=13),
     ))
-    style_fig(fig, f"{yr} 年度收支瀑布圖", height=480)
+    style_fig(fig, height=480)
     fig.update_layout(showlegend=False)
     return to_html_div(fig)
 
@@ -331,11 +331,11 @@ def chart_annual_trend(d):
     fig.add_hline(y=1.0, line_dash="dash", line_color=C["red"],
                   opacity=0.5, annotation_text="損益平衡", secondary_y=True)
     fig.update_layout(
-        title=dict(text="多年度收支趨勢", font=dict(size=22, color=C["text"]), x=0),
+        title=None,
         barmode="group", plot_bgcolor=THEME_BG, paper_bgcolor=THEME_BG,
-        font=dict(size=15), margin=dict(l=10, r=10, t=55, b=40),
+        font=dict(size=15, color=C["text"]), margin=dict(l=10, r=10, t=20, b=40),
         height=380, dragmode=False, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
     )
     fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", type="category")
     fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.05)", tickformat=".2s", secondary_y=False)
@@ -462,6 +462,13 @@ def make_balance_sheet_html(d):
     th_style = ("background:#1E293B;color:#fff;padding:10px 12px;"
                 "font-size:1rem;font-weight:700;text-align:left;")
 
+    bal_ok = abs(total_assets - (total_liab + total_eq)) < 1
+    bal_icon = "✅" if bal_ok else "⚠️"
+    bal_color = "#10B981" if bal_ok else "#EF4444"
+    bal_msg = (
+        f"資產 {fmt(total_assets)} ＝ 負債 {fmt(total_liab)} + 權益 {fmt(total_eq)}"
+    )
+
     return f"""
 <div style="text-align:center;font-size:1.15rem;font-weight:700;
             color:#1E293B;padding:0.6rem 0 1rem;letter-spacing:0.03em">
@@ -476,6 +483,9 @@ def make_balance_sheet_html(d):
     <thead><tr><th style="{th_style}">科目</th><th style="{th_style}text-align:right">金額</th></tr></thead>
     <tbody>{le_body}</tbody>
   </table>
+</div>
+<div style="text-align:center;padding:0.8rem 0 0.2rem;font-size:0.95rem;color:{bal_color};font-weight:600">
+  {bal_icon} {bal_msg}
 </div>"""
 
 

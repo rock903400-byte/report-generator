@@ -1,11 +1,70 @@
 """
 HTML 模板組裝（使用 Jinja2 模板引擎）
 """
+import re
 from html import escape as html_escape
 from datetime import date
 from jinja2 import Environment, FileSystemLoader
 from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct, GEMINI_MODEL
 from report_data import compute_ovd_stats
+
+
+def _md_to_html(text):
+    """簡易 markdown → HTML（僅處理 Gemini 常用格式）"""
+    lines = text.split("\n")
+    out = []
+    in_ul = False
+    in_ol = False
+    for line in lines:
+        stripped = line.strip()
+        # 標題
+        m = re.match(r"^(#{1,3})\s+(.+)$", stripped)
+        if m:
+            level = len(m.group(1)) + 2
+            out.append(f"<h{level}>{m.group(2)}</h{level}>")
+            in_ul = in_ol = False
+            continue
+        # 無序列表
+        if stripped.startswith("- ") or stripped.startswith("* "):
+            if not in_ul:
+                if in_ol:
+                    out.append("</ol>")
+                    in_ol = False
+                out.append("<ul>")
+                in_ul = True
+            out.append(f"<li>{html_escape(stripped[2:])}</li>")
+            continue
+        if in_ul:
+            out.append("</ul>")
+            in_ul = False
+        # 有序列表
+        m = re.match(r"^\d+\.\s+(.+)$", stripped)
+        if m:
+            if not in_ol:
+                if in_ul:
+                    out.append("</ul>")
+                    in_ul = False
+                out.append("<ol>")
+                in_ol = True
+            out.append(f"<li>{html_escape(m.group(1))}</li>")
+            continue
+        if in_ol:
+            out.append("</ol>")
+            in_ol = False
+        # 空行 = 段落
+        if not stripped:
+            out.append("</p><p>")
+            continue
+        # 一般段落行：處理行內 markdown
+        line_html = html_escape(stripped)
+        line_html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", line_html)
+        line_html = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", line_html)
+        out.append(line_html)
+    if in_ul:
+        out.append("</ul>")
+    if in_ol:
+        out.append("</ol>")
+    return "".join(out)
 
 PLOTLY_JS_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
 
@@ -58,8 +117,6 @@ def build_report(d, charts, ai_analysis=None):
          "good": d['R0'] <= 1.0},
         {"label": "提撥率",  "value": fmt_pct(d['eProv']),
          "sub": "備抵呆帳 / 逾期貸款", "good": d['eProv'] >= THRESHOLDS["provision_good"]},
-        {"label": "診斷結果", "value": status,
-         "sub": reason_text, "good": status.startswith("✅")},
     ]
 
     def kpi_card_html(card):
@@ -90,8 +147,6 @@ def build_report(d, charts, ai_analysis=None):
         {"label": "近 6M 走勢",  "value": ovd["trend"],
          "sub": "以近 6M 首末值判定", "good": ovd["trend"] == "持續改善",
          "custom_color": ovd["trend_color"]},
-        {"label": "最新提撥率",  "value": fmt_pct(ovd["prov_curr"]),
-         "sub": "備抵呆帳 / 逾期貸款", "good": ovd["prov_curr"] >= ovd["curr"]},
     ]
 
     def ovd_stat_card_html(card):
@@ -134,10 +189,10 @@ def build_report(d, charts, ai_analysis=None):
     # AI 顧問分析區塊
     ai_section = ""
     if ai_analysis:
-        escaped = html_escape(ai_analysis)
+        ai_html = _md_to_html(ai_analysis)
         ai_section = f"""<div class="ai-box">
     <h3>🤖 儲互社 AI 顧問分析</h3>
-    <p style="line-height:1.8;color:#475569;white-space:pre-wrap">{escaped}</p>
+    <div style="line-height:1.8;color:#475569">{ai_html}</div>
     <small style="color:#94A3B8;font-size:0.8rem">由 {GEMINI_MODEL} 產製，僅供參考</small>
   </div>"""
 
