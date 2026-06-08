@@ -52,45 +52,98 @@ def chart_member_capital_trend(d):
     m_color = C["green"] if m_diff >= 0 else C["red"]
     s_color = C["green"] if s_diff >= 0 else C["red"]
 
+    # 動態填色：成長藍、衰退紅
+    m_fill = "rgba(59,130,246,0.12)" if m_diff >= 0 else "rgba(239,68,68,0.10)"
+    s_fill = "rgba(34,197,94,0.12)" if s_diff >= 0 else "rgba(239,68,68,0.10)"
+    m_line_color = C["blue"] if m_diff >= 0 else C["red"]
+    s_line_color = C["green"] if s_diff >= 0 else C["red"]
+
+    # 年底快照（T0–T3）：篩 12 月份，取最近 4 筆
+    ye = df[df["年月"].dt.month == 12].tail(4).copy()
+    ye_labels = [f"民{d.year - 1911}年底" for d in ye["年月"]]
+
     fig = make_subplots(
         rows=2, cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.13,
+        vertical_spacing=0.14,
         subplot_titles=["社員數（人）", "股金（元）"],
     )
 
-    # ── 上排：社員數 ──
-    fig.add_trace(go.Bar(
+    # ── 上排：社員數 面積折線 ──
+    fig.add_trace(go.Scatter(
         x=df["年月"], y=df["社員數"],
-        name="社員數",
-        marker_color=C["blue"], opacity=0.82, marker_line=dict(width=0),
+        name="社員數", mode="lines",
+        line=dict(color=m_line_color, width=2.5),
+        fill="tozeroy", fillcolor=m_fill,
         hovertemplate="%{x}<br>社員數：%{y:,} 人<extra></extra>",
     ), row=1, col=1)
+    # 年底標記
+    if not ye.empty:
+        fig.add_trace(go.Scatter(
+            x=ye["年月"], y=ye["社員數"],
+            mode="markers+text", name="",
+            marker=dict(size=9, color="white", line=dict(color=m_line_color, width=2.5)),
+            text=ye_labels, textposition="top center",
+            textfont=dict(size=10, color=C["text"]),
+            hovertemplate="%{text}：%{y:,} 人<extra></extra>",
+            showlegend=False,
+        ), row=1, col=1)
+    # T3 基準虛線
+    if d["M3"] > 0:
+        fig.add_hline(
+            y=d["M3"], row=1, col=1,
+            line_dash="dot", line_color=C["amber"], line_width=1.5, opacity=0.7,
+            annotation_text=f"三年前基準 {int(d['M3']):,}人",
+            annotation_position="bottom right",
+            annotation_font=dict(size=10, color=C["amber"]),
+        )
     fig.add_annotation(
         x=last["年月"], y=last["社員數"],
         text=(f"<b>{int(last['社員數']):,} 人</b>  "
               f"<span style='color:{m_color}'>{m_arrow} {abs(m_diff):,}人 ({fmt_pct(d['memG_curr'])})</span>"),
-        font=dict(size=12, color=C["blue"]),
-        showarrow=True, arrowhead=2, arrowcolor=C["blue"], ax=0, ay=-42,
-        bgcolor="rgba(255,255,255,0.92)", bordercolor=C["blue"], borderpad=5, borderwidth=1,
+        font=dict(size=12, color=m_line_color),
+        showarrow=True, arrowhead=2, arrowcolor=m_line_color, ax=0, ay=-42,
+        bgcolor="rgba(255,255,255,0.92)", bordercolor=m_line_color, borderpad=5, borderwidth=1,
         xref="x", yref="y",
     )
 
-    # ── 下排：股金 ──
-    fig.add_trace(go.Bar(
+    # ── 下排：股金 面積折線 ──
+    fig.add_trace(go.Scatter(
         x=df["年月"], y=df["股金"],
-        name="股金",
-        marker_color=C["green"], opacity=0.82, marker_line=dict(width=0),
+        name="股金", mode="lines",
+        line=dict(color=s_line_color, width=2.5),
+        fill="tozeroy", fillcolor=s_fill,
         hovertemplate="%{x}<br>股金：%{customdata}<extra></extra>",
         customdata=[fmt(v) for v in df["股金"]],
     ), row=2, col=1)
+    # 年底標記
+    if not ye.empty:
+        fig.add_trace(go.Scatter(
+            x=ye["年月"], y=ye["股金"],
+            mode="markers+text", name="",
+            marker=dict(size=9, color="white", line=dict(color=s_line_color, width=2.5)),
+            text=ye_labels, textposition="top center",
+            textfont=dict(size=10, color=C["text"]),
+            hovertemplate="%{text}：%{customdata}<extra></extra>",
+            customdata=[fmt(v) for v in ye["股金"]],
+            showlegend=False,
+        ), row=2, col=1)
+    # T3 基準虛線
+    if d["S3"] > 0:
+        fig.add_hline(
+            y=d["S3"], row=2, col=1,
+            line_dash="dot", line_color=C["amber"], line_width=1.5, opacity=0.7,
+            annotation_text=f"三年前基準 {fmt(d['S3'])}",
+            annotation_position="bottom right",
+            annotation_font=dict(size=10, color=C["amber"]),
+        )
     fig.add_annotation(
         x=last["年月"], y=last["股金"],
         text=(f"<b>{fmt(last['股金'])}</b>  "
               f"<span style='color:{s_color}'>{s_arrow} {fmt(abs(s_diff))} ({fmt_pct(d['shrG_curr'])})</span>"),
-        font=dict(size=12, color=C["green"]),
-        showarrow=True, arrowhead=2, arrowcolor=C["green"], ax=0, ay=-42,
-        bgcolor="rgba(255,255,255,0.92)", bordercolor=C["green"], borderpad=5, borderwidth=1,
+        font=dict(size=12, color=s_line_color),
+        showarrow=True, arrowhead=2, arrowcolor=s_line_color, ax=0, ay=-42,
+        bgcolor="rgba(255,255,255,0.92)", bordercolor=s_line_color, borderpad=5, borderwidth=1,
         xref="x", yref="y2",
     )
 
@@ -98,11 +151,10 @@ def chart_member_capital_trend(d):
         plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
         font=dict(size=13, color=C["text"]),
         margin=dict(l=55, r=25, t=45, b=55),
-        height=540,
+        height=560,
         dragmode=False, hovermode="x unified",
         showlegend=False,
     )
-    # 子圖標題字體（僅更新 subplot_titles，保留資料 annotation 各自顏色）
     for ann in fig.layout.annotations:
         if ann.yref == "paper":
             ann.font.update(size=14, color=C["text"])
@@ -112,7 +164,7 @@ def chart_member_capital_trend(d):
         tickfont=dict(size=11), tickangle=-30,
     )
     fig.update_yaxes(
-        fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickfont=dict(size=11),
+        fixedrange=True, gridcolor="rgba(0,0,0,0.10)", tickfont=dict(size=11),
     )
     fig.update_yaxes(title_text="人數", tickformat=",d", row=1, col=1)
     fig.update_yaxes(title_text="元", tickformat=".2s", row=2, col=1)
