@@ -192,8 +192,10 @@ def build_report(d, charts, ai_analysis=None):
         ai_html = _md_to_html(ai_analysis)
         ai_section = f"""<div class="ai-box">
     <h3>🤖 儲互社 AI 顧問分析</h3>
-    <div style="line-height:1.8;color:#475569">{ai_html}</div>
-    <small style="color:#94A3B8;font-size:0.8rem">由 {GEMINI_MODEL} 產製，僅供參考</small>
+    <div style="line-height:1.65;color:#475569">{ai_html}</div>
+    <div style="margin-top:0.8rem;padding-top:0.6rem;border-top:1px solid #DBEAFE">
+      <small style="color:#94A3B8;font-size:0.78rem">由 {GEMINI_MODEL} 產製，僅供參考</small>
+    </div>
   </div>"""
 
     ctx = dict(
