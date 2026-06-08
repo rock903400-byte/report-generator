@@ -5,33 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ s_name }} 財務分析報告</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <script src="{{ PLOTLY_JS_CDN }}"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F5F0EB;
+      --card-bg: #FFFDFB;
+      --card-border: #EDE8E2;
+      --text: #1E293B;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --header-bg: #1E293B;
+      --header-text: #F1F5F9;
+      --accent: #3B82F6;
+      --accent-light: #EFF6FF;
+      --shadow: 0 2px 12px rgba(60,40,20,0.06);
+      --shadow-hover: 0 6px 24px rgba(60,40,20,0.12);
+    }
     body {
       font-family: 'Noto Sans TC', sans-serif;
-      background: #F3F0EC;
-      color: #1E293B;
+      background: var(--bg);
+      color: var(--text);
       font-size: 16px;
-      line-height: 1.6;
+      line-height: 1.7;
       letter-spacing: 0.02em;
+      -webkit-font-smoothing: antialiased;
     }
     .report-header {
-      background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
+      background: linear-gradient(135deg, #1E293B 0%, #334155 60%, #475569 100%);
       color: #fff;
       padding: 2.5rem 3rem;
       border-bottom: 4px solid {{ C.blue }};
+      position: relative;
+      overflow: hidden;
+    }
+    .report-header::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 50%;
+      pointer-events: none;
     }
     .report-header h1 {
       font-size: 2.2rem;
       font-weight: 900;
       letter-spacing: 0.02em;
       margin-bottom: 0.5rem;
+      position: relative;
     }
     .report-header .meta {
       font-size: 1rem;
       color: #94A3B8;
+      font-weight: 500;
+      position: relative;
     }
     .status-badge {
       display: inline-block;
@@ -42,6 +73,8 @@
       padding: 6px 18px;
       border-radius: 100px;
       margin-top: 0.8rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      position: relative;
     }
     .container {
       max-width: 1200px;
@@ -49,42 +82,70 @@
       padding: 2rem 1.5rem;
     }
     .section-title {
-      font-size: 1.5rem;
+      font-size: 1.45rem;
       font-weight: 700;
-      color: #1E293B;
+      color: var(--text);
       padding: 0.5rem 0 0.8rem 1rem;
       border-left: 4px solid {{ C.blue }};
-      border-bottom: 1px solid #E6E2DD;
+      border-bottom: 1px solid var(--card-border);
       margin-bottom: 1.5rem;
+      margin-top: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-title:first-of-type {
+      margin-top: 0;
     }
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 1rem;
       margin-bottom: 2.5rem;
     }
     .kpi-card {
-      background: #fff;
-      border-radius: 14px;
+      background: var(--card-bg);
+      border-radius: 12px;
       padding: 1.2rem 1.4rem;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.09);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--card-border);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: currentColor;
+      opacity: 0.1;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
     }
     .kpi-label {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
-      color: #64748B;
+      color: var(--text-muted);
       margin-bottom: 0.4rem;
+      letter-spacing: 0.03em;
     }
     .kpi-value {
-      font-size: 2rem;
+      font-size: 1.9rem;
       font-weight: 900;
       line-height: 1.2;
       word-break: break-all;
+      letter-spacing: -0.02em;
     }
     .kpi-sub {
-      font-size: 0.85rem;
-      color: #64748B;
-      margin-top: 0.3rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      font-weight: 500;
     }
     .chart-grid-2 {
       display: grid;
@@ -96,17 +157,39 @@
       margin-bottom: 2rem;
     }
     .chart-box {
-      background: #fff;
-      border-radius: 14px;
+      background: var(--card-bg);
+      border-radius: 12px;
       padding: 1.2rem;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.09);
-      border: 1px solid #E6E2DD;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--card-border);
+      transition: box-shadow 0.2s ease;
+    }
+    .chart-box:hover {
+      box-shadow: var(--shadow-hover);
+    }
+    .data-table-wrap {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .data-table-wrap .scroll-area {
+      overflow-x: auto;
+      max-height: 600px;
+      overflow-y: auto;
     }
     .data-table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      font-size: 1.05rem;
+      font-size: 1rem;
+    }
+    .data-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
     .data-table thead th:first-child {
       border-top-left-radius: 8px;
@@ -120,79 +203,128 @@
       padding: 10px 12px;
       text-align: center;
       font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 0.03em;
     }
     .data-table td {
       padding: 9px 12px;
       text-align: center;
-      border-bottom: 1px solid #E2E8F0;
+      border-bottom: 1px solid var(--card-border);
+      font-weight: 500;
+      color: var(--text-secondary);
     }
-    .data-table tr:nth-child(even) td {
-      background: #F8FAFC;
+    .data-table tbody tr:nth-child(even) td {
+      background: #FAF8F5;
     }
     .data-table tbody tr:hover td {
-      background: #F0EDEA;
+      background: #F5F0EB;
+      transition: background 0.15s ease;
     }
     .risk-box {
-      background: #fff;
-      border-radius: 14px;
-      border-left: 8px solid {{ status_color }};
-      padding: 1.2rem 1.5rem;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border-left: 6px solid {{ status_color }};
+      padding: 1.4rem 1.6rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.09);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--card-border);
+      border-left-width: 6px;
+      position: relative;
     }
     .risk-box h3 {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: {{ status_color }};
       margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .risk-box h3::before {
+      content: "⚠️";
+      font-size: 1.1rem;
+      filter: grayscale(0.3);
     }
     .risk-box p {
-      color: #475569;
-      line-height: 1.8;
+      color: var(--text-secondary);
+      line-height: 1.85;
+      font-size: 1.02rem;
     }
     .ai-box {
-      background: linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 100%);
+      background: linear-gradient(135deg, #F8FAFF 0%, #F0F4FF 100%);
       border-left: 6px solid {{ C.blue }};
-      border-radius: 14px;
-      padding: 1.2rem 1.5rem 1rem;
+      border-radius: 12px;
+      padding: 1.4rem 1.6rem 1.2rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      box-shadow: var(--shadow);
+      border: 1px solid #DBEAFE;
+      border-left-width: 6px;
+      position: relative;
     }
     .ai-box h3 {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: {{ C.blue }};
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .ai-box h3::before {
+      content: "🤖";
+      font-size: 1.2rem;
     }
     .ai-box ul, .ai-box ol {
       padding-left: 1.4rem;
       margin: 0.3rem 0;
     }
     .ai-box li {
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.3rem;
+    }
+    .ai-box p {
+      margin-bottom: 0.4rem;
+    }
+    .ai-box strong {
+      color: var(--text);
+      font-weight: 700;
     }
     .report-footer {
       text-align: center;
       padding: 2rem;
-      color: #94A3B8;
+      color: var(--text-muted);
       font-size: 0.9rem;
       border-top: 1px solid #D4CFC9;
       margin-top: 2rem;
+      background: #EDE8E2;
     }
     @media (max-width: 768px) {
-      .chart-grid-2 { grid-template-columns: 1fr; }
+      .chart-grid-2 { grid-template-columns: 1fr; gap: 1rem; }
       .report-header { padding: 1.5rem; }
       .report-header h1 { font-size: 1.6rem; }
       .kpi-value { font-size: 1.5rem; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+      .kpi-card { padding: 1rem; }
+      .section-title { font-size: 1.25rem; }
+      .container { padding: 1.2rem 1rem; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+      .chart-grid-2 { grid-template-columns: 1fr; }
     }
     @media print {
-      body { font-size: 12px; }
-      .report-header { padding: 1rem 1.5rem; }
+      body { font-size: 12px; background: #fff; }
+      .report-header { padding: 1rem 1.5rem; background: #1E293B; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .report-header h1 { font-size: 1.4rem; }
       .kpi-card { box-shadow: none; border: 1px solid #CBD5E1; break-inside: avoid; }
       .kpi-value { font-size: 1.4rem; }
-      .chart-box { break-inside: avoid; }
-      .report-footer { position: fixed; bottom: 0; width: 100%; }
+      .chart-box { break-inside: avoid; box-shadow: none; border: 1px solid #CBD5E1; }
+      .risk-box, .ai-box { box-shadow: none; break-inside: avoid; }
+      .data-table-wrap { box-shadow: none; border: 1px solid #CBD5E1; }
+      .report-footer { position: fixed; bottom: 0; width: 100%; background: #EDE8E2; }
+      .section-title { margin-top: 1.5rem; }
+      .kpi-grid { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+      .chart-grid-2 { grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .ai-box { background: #F8FAFF; }
     }
   </style>
 </head>
@@ -248,10 +380,14 @@
   <div class="chart-full chart-box" style="margin-top:1.5rem">{{ charts.waterfall | safe }}</div>
 
   <h2 class="section-title">📋 近 12 期社務資料</h2>
-  <div class="chart-box" style="overflow-x:auto;margin-bottom:2rem">{{ table_m_html | safe }}</div>
+  <div class="data-table-wrap">
+    <div class="scroll-area">{{ table_m_html | safe }}</div>
+  </div>
 
   <h2 class="section-title">📋 近 12 期放款資料</h2>
-  <div class="chart-box" style="overflow-x:auto;margin-bottom:2rem">{{ table_l_html | safe }}</div>
+  <div class="data-table-wrap">
+    <div class="scroll-area">{{ table_l_html | safe }}</div>
+  </div>
 
 </div>
 

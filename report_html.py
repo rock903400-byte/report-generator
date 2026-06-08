@@ -9,62 +9,110 @@ from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct, GEMINI_MODEL
 from report_data import compute_ovd_stats
 
 
+def _inline_md(text):
+    """行內 markdown → HTML（粗體、斜體）"""
+    line_html = html_escape(text)
+    line_html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", line_html)
+    line_html = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", line_html)
+    return line_html
+
+
 def _md_to_html(text):
-    """簡易 markdown → HTML（僅處理 Gemini 常用格式）"""
+    """簡易 markdown → HTML（處理 Gemini 常用格式）"""
+    if not text or not text.strip():
+        return ""
+
     lines = text.split("\n")
     out = []
     in_ul = False
     in_ol = False
+    para_lines = []
+
+    def _flush_para():
+        if para_lines:
+            p_content = " ".join(para_lines)
+            out.append(f"<p>{_inline_md(p_content)}</p>")
+            para_lines.clear()
+
     for line in lines:
         stripped = line.strip()
+
         # 標題
         m = re.match(r"^(#{1,3})\s+(.+)$", stripped)
         if m:
+            _flush_para()
+            if in_ul:
+                out.append("</ul>")
+                in_ul = False
+            if in_ol:
+                out.append("</ol>")
+                in_ol = False
             level = len(m.group(1)) + 2
-            out.append(f"<h{level}>{m.group(2)}</h{level}>")
-            in_ul = in_ol = False
+            out.append(f"<h{level}>{_inline_md(m.group(2))}</h{level}>")
             continue
+
         # 無序列表
         if stripped.startswith("- ") or stripped.startswith("* "):
+            _flush_para()
+            if in_ol:
+                out.append("</ol>")
+                in_ol = False
             if not in_ul:
-                if in_ol:
-                    out.append("</ol>")
-                    in_ol = False
                 out.append("<ul>")
                 in_ul = True
-            out.append(f"<li>{html_escape(stripped[2:])}</li>")
+            out.append(f"<li>{_inline_md(stripped[2:])}</li>")
             continue
-        if in_ul:
-            out.append("</ul>")
-            in_ul = False
+
         # 有序列表
         m = re.match(r"^\d+\.\s+(.+)$", stripped)
         if m:
+            _flush_para()
+            if in_ul:
+                out.append("</ul>")
+                in_ul = False
             if not in_ol:
-                if in_ul:
-                    out.append("</ul>")
-                    in_ul = False
                 out.append("<ol>")
                 in_ol = True
-            out.append(f"<li>{html_escape(m.group(1))}</li>")
+            out.append(f"<li>{_inline_md(m.group(1))}</li>")
             continue
+
+        # 結束列表
+        if in_ul:
+            out.append("</ul>")
+            in_ul = False
         if in_ol:
             out.append("</ol>")
             in_ol = False
-        # 空行 = 段落
+
+        # 空行
         if not stripped:
-            out.append("</p><p>")
+            _flush_para()
             continue
-        # 一般段落行：處理行內 markdown
-        line_html = html_escape(stripped)
-        line_html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", line_html)
-        line_html = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", line_html)
-        out.append(line_html)
+
+        # 一般段落行
+        para_lines.append(stripped)
+
     if in_ul:
         out.append("</ul>")
     if in_ol:
         out.append("</ol>")
+    _flush_para()
+
     return "".join(out)
+
+
+def _is_ai_truncated(text):
+    """檢查 Gemini 回應是否被截斷"""
+    if not text or not text.strip():
+        return True
+    text = text.strip()
+    # 以未完成的 markdown 符號結尾
+    if text.endswith("**") or text.endswith("*") or text.endswith("：") or text.endswith("-"):
+        return True
+    # 正常回應應包含「建議」段落
+    if "建議" not in text:
+        return True
+    return False
 
 PLOTLY_JS_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
 
@@ -189,8 +237,20 @@ def build_report(d, charts, ai_analysis=None):
     # AI 顧問分析區塊
     ai_section = ""
     if ai_analysis:
-        ai_html = _md_to_html(ai_analysis)
-        ai_section = f"""<div class="ai-box">
+        if _is_ai_truncated(ai_analysis):
+            ai_section = f"""<div class="ai-box">
+    <h3>🤖 儲互社 AI 顧問分析</h3>
+    <div style="line-height:1.65;color:#475569">
+      <p>⚠️ AI 分析回應似乎被截斷或不完整，請重新產生報告或略過此分析。</p>
+      <p style="color:#94A3B8;font-size:0.85rem;margin-top:0.5rem">原始回應片段：{html_escape(ai_analysis[:120])}…</p>
+    </div>
+    <div style="margin-top:0.8rem;padding-top:0.6rem;border-top:1px solid #DBEAFE">
+      <small style="color:#94A3B8;font-size:0.78rem">由 {GEMINI_MODEL} 產製，僅供參考</small>
+    </div>
+  </div>"""
+        else:
+            ai_html = _md_to_html(ai_analysis)
+            ai_section = f"""<div class="ai-box">
     <h3>🤖 儲互社 AI 顧問分析</h3>
     <div style="line-height:1.65;color:#475569">{ai_html}</div>
     <div style="margin-top:0.8rem;padding-top:0.6rem;border-top:1px solid #DBEAFE">
