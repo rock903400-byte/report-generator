@@ -389,6 +389,9 @@
     {{ kpi_html | safe }}
   </div>
 
+  <h2 class="section-title">📊 關鍵指標年度對比</h2>
+  <div class="data-table-wrap">{{ kpi_yoy_html | safe }}</div>
+
   <h2 class="section-title">👥 社員數 & 股金趨勢</h2>
   <div class="chart-full chart-box">{{ charts.member_capital_trend | safe }}</div>
 
@@ -407,6 +410,12 @@
   <div class="chart-full chart-box">{{ charts.balance_sheet | safe }}</div>
   <div class="chart-full chart-box" style="margin-top:1.5rem">{{ charts.annual_trend | safe }}</div>
   <div class="chart-full chart-box" style="margin-top:1.5rem">{{ charts.waterfall | safe }}</div>
+  <div class="chart-full chart-box" style="margin-top:1.5rem">
+    <div style="font-size:1rem;font-weight:700;color:#1E293B;margin-bottom:0.5rem;padding:0 0.2rem">
+      💹 年化放款利率趨勢
+    </div>
+    {{ charts.lending_rate | safe }}
+  </div>
 
   <h2 class="section-title">📋 近 12 期社務資料</h2>
   <div class="data-table-wrap">

@@ -616,6 +616,49 @@ def make_balance_sheet_html(d):
 </div>"""
 
 
+def chart_lending_rate(d):
+    """年化放款利率趨勢（410x 利息收入 / 131x 平均淨額）"""
+    if not d.get("has_csv") or d["df_csv"].empty:
+        return "<p style='color:#94A3B8'>無 CSV 財務資料</p>"
+
+    df = d["df_csv"].copy()
+    df["年"] = df["年月"].dt.year
+
+    int_inc  = df[df["會計科目"].str.startswith("410")].groupby("年")["當月金額"].sum()
+    loan_bal = df[df["會計科目"].str.startswith("131")].groupby("年")["當月金額"].mean()
+    rate = (int_inc / loan_bal * 100).dropna()
+
+    cur_yr = int(df["年月"].dt.year.max())
+    if df[df["年"] == cur_yr]["年月"].dt.month.nunique() < 10:
+        rate = rate.drop(cur_yr, errors="ignore")
+
+    if rate.empty:
+        return "<p style='color:#94A3B8'>放款利率資料不足</p>"
+
+    rate = rate.sort_index()
+    years = [str(yr) for yr in rate.index]
+    vals  = rate.values.tolist()
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=years, y=vals,
+        mode="lines+markers+text",
+        line=dict(color=C["blue"], width=3),
+        marker=dict(size=13, color=C["blue"], line=dict(width=2.5, color="white")),
+        text=[f"{v:.2f}%" for v in vals],
+        textposition="top center",
+        textfont=dict(size=13, color=C["text"]),
+        hovertemplate="%{x} 年<br>年化放款利率：%{y:.2f}%<extra></extra>",
+        name="年化放款利率",
+    ))
+
+    style_fig(fig, height=320)
+    fig.update_xaxes(type="category", tickangle=0)
+    fig.update_yaxes(tickformat=".2f", ticksuffix="%", title_text="利率 (%)")
+    fig.update_layout(showlegend=False)
+    return to_html_div(fig)
+
+
 def generate_all_charts(d):
     """產生所有圖表 HTML，回傳 dict"""
     return dict(
@@ -627,4 +670,5 @@ def generate_all_charts(d):
         waterfall=chart_waterfall(d),
         annual_trend=chart_annual_trend(d),
         balance_sheet=make_balance_sheet_html(d),
+        lending_rate=chart_lending_rate(d),
     )

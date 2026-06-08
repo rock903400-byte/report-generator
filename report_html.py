@@ -129,6 +129,92 @@ def df_to_html_table(df):
     </table>"""
 
 
+def build_kpi_yoy_table(d):
+    """KPI 年度對比表（所有可用年底快照，顏色標示好轉/惡化）"""
+    df_m = d["df_m"]
+    df_l = d["df_l"]
+
+    m_ye = df_m[df_m["年月"].dt.month == 12].copy()
+    l_ye = df_l[df_l["年月"].dt.month == 12].copy()
+
+    all_years = sorted(set(
+        list(m_ye["年月"].dt.year.unique()) +
+        list(l_ye["年月"].dt.year.unique())
+    ))
+    if len(all_years) < 2:
+        return "<p style='color:#94A3B8;padding:1rem'>年度資料不足（需至少 2 年）</p>"
+
+    def _mval(yr, col):
+        r = m_ye[m_ye["年月"].dt.year == yr]
+        return float(r.iloc[-1][col]) if not r.empty and col in r.columns else None
+
+    def _lval(yr, col):
+        r = l_ye[l_ye["年月"].dt.year == yr]
+        return float(r.iloc[-1][col]) if not r.empty and col in r.columns else None
+
+    # 計算放款利率（410x 年利息 / 131x 月均淨額）
+    lr = {}
+    if d.get("has_csv") and not d["df_csv"].empty:
+        dfc = d["df_csv"].copy()
+        dfc["年"] = dfc["年月"].dt.year
+        ii = dfc[dfc["會計科目"].str.startswith("410")].groupby("年")["當月金額"].sum()
+        lb = dfc[dfc["會計科目"].str.startswith("131")].groupby("年")["當月金額"].mean()
+        rs = (ii / lb * 100).dropna()
+        cur_yr = int(dfc["年月"].dt.year.max())
+        if dfc[dfc["年"] == cur_yr]["年月"].dt.month.nunique() < 10:
+            rs = rs.drop(cur_yr, errors="ignore")
+        lr = rs.to_dict()
+
+    rows_def = [
+        ("社員數",  {yr: _mval(yr, "社員數") for yr in all_years}, lambda v: f"{int(v):,}人",  "up"),
+        ("股金",    {yr: _mval(yr, "股金")   for yr in all_years}, fmt,                         "up"),
+        ("貸放比",  {yr: _mval(yr, "貸放比") for yr in all_years}, fmt_pct,                     "range"),
+        ("逾放比",  {yr: _lval(yr, "逾放比") for yr in all_years}, fmt_pct,                     "down"),
+        ("開支比",  {yr: _lval(yr, "開支比") for yr in all_years}, fmt_pct,                     "down"),
+        ("提撥率",  {yr: _lval(yr, "提撥率") for yr in all_years}, fmt_pct,                     "up"),
+    ]
+    if lr:
+        rows_def.append(("放款利率*", {yr: lr.get(yr) for yr in all_years},
+                         lambda v: f"{v:.2f}%", "neutral"))
+
+    def _bg(direction, curr, prev):
+        if curr is None or prev is None:
+            return ""
+        if direction == "up":
+            return "#D1FAE5" if curr > prev * 1.001 else ("#FEE2E2" if curr < prev * 0.999 else "")
+        if direction == "down":
+            return "#D1FAE5" if curr < prev * 0.999 else ("#FEE2E2" if curr > prev * 1.001 else "")
+        if direction == "range":
+            in_c, in_p = 0.4 <= curr <= 0.8, 0.4 <= prev <= 0.8
+            if in_c and not in_p:
+                return "#D1FAE5"
+            if not in_c and in_p:
+                return "#FEE2E2"
+        return ""
+
+    def roc(yr):
+        return f"民{yr - 1911}年底"
+
+    th = "".join(f'<th style="text-align:center">{roc(yr)}</th>' for yr in all_years)
+    body = ""
+    for label, vals, fmt_fn, direction in rows_def:
+        tds = []
+        for i, yr in enumerate(all_years):
+            v = vals.get(yr)
+            txt = fmt_fn(v) if v is not None else "—"
+            bg = _bg(direction, v, vals.get(all_years[i - 1])) if i > 0 else ""
+            st = f' style="background:{bg};text-align:center"' if bg else ' style="text-align:center"'
+            tds.append(f"<td{st}>{txt}</td>")
+        body += f'<tr><th style="text-align:left;white-space:nowrap">{label}</th>{"".join(tds)}</tr>\n'
+
+    note = ('<p style="font-size:0.8rem;color:#94A3B8;padding:0.5rem 1rem">'
+            '* 放款利率＝年度利息收入 / 平均放款餘額，月份不足 10 個月之年度不計入</p>') if lr else ""
+
+    return (f'<table class="data-table" style="width:100%">'
+            f'<thead><tr><th style="text-align:left">指標</th>{th}</tr></thead>'
+            f'<tbody>{body}</tbody></table>{note}')
+
+
 def build_report(d, charts, ai_analysis=None):
     """組裝完整 HTML 報告字串"""
     s_name = d["s_name"]
@@ -278,6 +364,8 @@ def build_report(d, charts, ai_analysis=None):
     </div>
   </div>"""
 
+    kpi_yoy_html = build_kpi_yoy_table(d)
+
     ctx = dict(
         PLOTLY_JS_CDN=PLOTLY_JS_CDN,
         THEME_BG=THEME_BG,
@@ -292,6 +380,7 @@ def build_report(d, charts, ai_analysis=None):
         note_spans=note_spans,
         ai_section=ai_section,
         kpi_html=kpi_html,
+        kpi_yoy_html=kpi_yoy_html,
         ovd_stats_html=ovd_stats_html,
         charts=charts,
         table_m_html=table_m_html,
