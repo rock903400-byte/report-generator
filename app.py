@@ -18,6 +18,10 @@ from report_charts import generate_all_charts
 from report_html import build_report
 from report_ai import analyze_with_gemini
 
+@st.cache_data(show_spinner=False)
+def _load_cached(excel_bytes: bytes, csv_bytes: bytes | None):
+    return load_data_from_bytes(excel_bytes, csv_bytes)
+
 st.set_page_config(
     page_title="理事會報告產生器",
     page_icon="📊",
@@ -75,7 +79,7 @@ with st.spinner("載入資料中…"):
     try:
         excel_bytes = xls_file.read()
         csv_bytes = csv_file.read() if csv_file is not None else None
-        df_m, df_l, df_csv = load_data_from_bytes(excel_bytes, csv_bytes)
+        df_m, df_l, df_csv = _load_cached(excel_bytes, csv_bytes)
         has_csv = csv_bytes is not None and not df_csv.empty
         st.success(f"✅ 載入完成：{len(df_m)} 筆社務資料、{len(df_l)} 筆放款資料"
                    + (f"、{len(df_csv)} 筆財務科目" if has_csv else ""))
