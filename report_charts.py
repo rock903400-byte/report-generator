@@ -43,71 +43,79 @@ def to_html_div(fig):
 
 def chart_member_capital_trend(d):
     df = d["df_m"][["年月", "社員數", "股金"]].copy()
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    last = df.iloc[-1]
+
+    m_diff = int(d["curr_M"] - d["M0"])
+    s_diff = d["curr_S"] - d["S0"]
+    m_arrow = "▲" if m_diff >= 0 else "▼"
+    s_arrow = "▲" if s_diff >= 0 else "▼"
+    m_color = C["green"] if m_diff >= 0 else C["red"]
+    s_color = C["green"] if s_diff >= 0 else C["red"]
+
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.13,
+        subplot_titles=["社員數（人）", "股金（元）"],
+    )
+
+    # ── 上排：社員數 ──
     fig.add_trace(go.Bar(
         x=df["年月"], y=df["社員數"],
-        name="社員數", marker_color=C["blue"], opacity=0.82,
-        marker_line=dict(width=0),
+        name="社員數",
+        marker_color=C["blue"], opacity=0.82, marker_line=dict(width=0),
         hovertemplate="%{x}<br>社員數：%{y:,} 人<extra></extra>",
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["社員數"].rolling(3, min_periods=1).mean(),
-        name="社員數 3M 均線", mode="lines",
-        line=dict(color="#1D4ED8", width=2.5),
-        hovertemplate="%{x}<br>社員數 3M 均：%{y:,.0f} 人<extra></extra>",
-    ), secondary_y=False)
+    ), row=1, col=1)
+    fig.add_annotation(
+        x=last["年月"], y=last["社員數"],
+        text=(f"<b>{int(last['社員數']):,} 人</b>  "
+              f"<span style='color:{m_color}'>{m_arrow} {abs(m_diff):,}人 ({fmt_pct(d['memG_curr'])})</span>"),
+        font=dict(size=12, color=C["blue"]),
+        showarrow=True, arrowhead=2, arrowcolor=C["blue"], ax=0, ay=-42,
+        bgcolor="rgba(255,255,255,0.92)", bordercolor=C["blue"], borderpad=5, borderwidth=1,
+        xref="x", yref="y",
+    )
+
+    # ── 下排：股金 ──
     fig.add_trace(go.Bar(
         x=df["年月"], y=df["股金"],
-        name="股金", marker_color=C["green"], opacity=0.82,
-        marker_line=dict(width=0),
-        hovertemplate="%{x}<br>股金：%{y:,.0f}<extra></extra>",
-    ), secondary_y=True)
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["股金"].rolling(3, min_periods=1).mean(),
-        name="股金 3M 均線", mode="lines",
-        line=dict(color="#059669", width=2.5, dash="dot"),
-        hovertemplate="%{x}<br>股金 3M 均：%{y:,.0f}<extra></extra>",
-    ), secondary_y=True)
-
-    last_m = df.iloc[-1]
+        name="股金",
+        marker_color=C["green"], opacity=0.82, marker_line=dict(width=0),
+        hovertemplate="%{x}<br>股金：%{customdata}<extra></extra>",
+        customdata=[fmt(v) for v in df["股金"]],
+    ), row=2, col=1)
     fig.add_annotation(
-        x=last_m["年月"], y=last_m["社員數"],
-        text=f'{int(last_m["社員數"]):,} 人',
-        font=dict(size=13, color=C["blue"]),
-        showarrow=True, arrowhead=0, ax=0, ay=-28,
-        bgcolor="rgba(255,255,255,0.85)", bordercolor=C["blue"],
-        borderpad=4, borderwidth=1,
-    )
-    fig.add_annotation(
-        x=last_m["年月"], y=last_m["股金"],
-        text=f'{last_m["股金"]/1e4:.0f} 萬',
-        font=dict(size=13, color=C["green"]),
-        showarrow=True, arrowhead=0, ax=0, ay=28,
-        bgcolor="rgba(255,255,255,0.85)", bordercolor=C["green"],
-        borderpad=4, borderwidth=1,
+        x=last["年月"], y=last["股金"],
+        text=(f"<b>{fmt(last['股金'])}</b>  "
+              f"<span style='color:{s_color}'>{s_arrow} {fmt(abs(s_diff))} ({fmt_pct(d['shrG_curr'])})</span>"),
+        font=dict(size=12, color=C["green"]),
+        showarrow=True, arrowhead=2, arrowcolor=C["green"], ax=0, ay=-42,
+        bgcolor="rgba(255,255,255,0.92)", bordercolor=C["green"], borderpad=5, borderwidth=1,
+        xref="x", yref="y2",
     )
 
     fig.update_layout(
-        barmode="overlay",
-        title=None,
         plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
         font=dict(size=13, color=C["text"]),
-        margin=dict(l=55, r=25, t=20, b=55),
-        height=420,
+        margin=dict(l=55, r=25, t=45, b=55),
+        height=540,
         dragmode=False, hovermode="x unified",
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
-            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
-        ),
+        showlegend=False,
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
-                     showline=True, linecolor="rgba(0,0,0,0.12)",
-                     tickfont=dict(size=12), tickangle=-30)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)",
-                     title_text="社員數（人）", tickfont=dict(size=12), secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)",
-                     tickformat=".2s", title_text="股金（元）",
-                     tickfont=dict(size=12), secondary_y=True)
+    # 子圖標題字體（僅更新 subplot_titles，保留資料 annotation 各自顏色）
+    for ann in fig.layout.annotations:
+        if ann.yref == "paper":
+            ann.font.update(size=14, color=C["text"])
+    fig.update_xaxes(
+        fixedrange=True, gridcolor="rgba(0,0,0,0)",
+        showline=True, linecolor="rgba(0,0,0,0.12)",
+        tickfont=dict(size=11), tickangle=-30,
+    )
+    fig.update_yaxes(
+        fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickfont=dict(size=11),
+    )
+    fig.update_yaxes(title_text="人數", tickformat=",d", row=1, col=1)
+    fig.update_yaxes(title_text="元", tickformat=".2s", row=2, col=1)
     return to_html_div(fig)
 
 

@@ -141,31 +141,55 @@ def build_report(d, charts, ai_analysis=None):
     data_end = max_d.strftime("%Y 年 %m 月")
     report_date = date.today().strftime("%Y 年 %m 月 %d 日")
 
-    # KPI 卡片（社員→股金→貸放比→儲蓄率→逾放比→開支比→提撥率→診斷結果）
+    # ── 貸放比 / 儲蓄率 YoY 計算（對照前一年底） ──
+    df_m_data = d["df_m"]
+    T1 = d["T1"]
+    _m1 = df_m_data[df_m_data["年月"] <= T1].sort_values("年月")
+    loan_prev = float(_m1["貸放比"].iloc[-1]) if not _m1.empty else None
+    rate_prev = float(_m1["儲蓄率"].iloc[-1]) if not _m1.empty else None
+
+    if loan_prev is not None:
+        _ld = d["eLoan"] - loan_prev
+        loan_yoy = f"  {'▲' if _ld >= 0 else '▼'} {abs(_ld * 100):.1f}pp vs 去年"
+    else:
+        loan_yoy = ""
+
+    sav_thr = THRESHOLDS["savings_good"]
+    prov_thr = THRESHOLDS["provision_good"]
+    sav_ok = d["eRate"] >= sav_thr
+    prov_ok = d["eProv"] >= prov_thr
+
+    # ── KPI 卡片（風險觸發數排第一） ──
+    rc = d.get("risk_count", 0)
     kpi_cards = [
+        {"label": "風險觸發數", "value": f"{rc} / 5 條件",
+         "sub": d["status"],
+         "good": rc == 0, "custom_color": d["status_color"]},
         {"label": "現有社員", "value": f"{int(d['curr_M']):,} 人",
          "sub": f"12M {'↑' if d['memG_curr'] >= 0 else '↓'} {abs(int(d['curr_M'] - d['M0'])):,} 人 ({fmt_pct(d['memG_curr'])})",
-         "good": d['memG_curr'] >= 0},
-        {"label": "現有股金", "value": fmt(d['curr_S']),
+         "good": d["memG_curr"] >= 0},
+        {"label": "現有股金", "value": fmt(d["curr_S"]),
          "sub": f"12M {'↑' if d['shrG_curr'] >= 0 else '↓'} {fmt(abs(d['curr_S'] - d['S0']))} ({fmt_pct(d['shrG_curr'])})",
-         "good": d['shrG_curr'] >= 0},
-        {"label": "貸放比",  "value": fmt_pct(d['eLoan']),
-         "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%)",
-         "good": 0.4 <= d['eLoan'] <= 0.8},
-        {"label": "儲蓄率",  "value": fmt_pct(d['eRate']),
-         "sub": "存款 / 股金", "good": d['eRate'] >= THRESHOLDS["savings_good"]},
-        {"label": "逾放比",  "value": fmt_pct(d['eOvd']),
-         "sub": f"{'警戒' if d['eOvd'] > 0.02 else '正常'} (警戒值 2%)",
-         "good": d['eOvd'] <= 0.02},
-        {"label": "開支比(年)", "value": fmt_pct(d['R0']),
-         "sub": f"{'虧損' if d['R0'] > 1.0 else '盈餘'} (損益平衡 100%)",
-         "good": d['R0'] <= 1.0},
-        {"label": "提撥率",  "value": fmt_pct(d['eProv']),
-         "sub": "備抵呆帳 / 逾期貸款", "good": d['eProv'] >= THRESHOLDS["provision_good"]},
+         "good": d["shrG_curr"] >= 0},
+        {"label": "貸放比",  "value": fmt_pct(d["eLoan"]),
+         "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%){loan_yoy}",
+         "good": 0.4 <= d["eLoan"] <= 0.8},
+        {"label": "儲蓄率",  "value": fmt_pct(d["eRate"]),
+         "sub": f"門檻 {sav_thr * 100:.0f}%，{'達標 ✓' if sav_ok else '未達標 ✗'}",
+         "good": sav_ok},
+        {"label": "逾放比",  "value": fmt_pct(d["eOvd"]),
+         "sub": f"{'⚠ 警戒' if d['eOvd'] > 0.02 else '✓ 正常'} (警戒值 2%)",
+         "good": d["eOvd"] <= 0.02},
+        {"label": "開支比(年)", "value": fmt_pct(d["R0"]),
+         "sub": f"{'⚠ 虧損' if d['R0'] > 1.0 else '✓ 盈餘'} (損益平衡 100%)",
+         "good": d["R0"] <= 1.0},
+        {"label": "提撥率",  "value": fmt_pct(d["eProv"]),
+         "sub": f"{'充足 ✓' if prov_ok else '不足 ✗'}（門檻 {prov_thr * 100:.0f}%）",
+         "good": prov_ok},
     ]
 
     def kpi_card_html(card):
-        color = C["green"] if card["good"] else C["red"]
+        color = card.get("custom_color") or (C["green"] if card["good"] else C["red"])
         return f"""<div class="kpi-card" style="--card-color:{color}">
           <div class="kpi-label">{card['label']}</div>
           <div class="kpi-value" style="color:{color}">{card['value']}</div>
