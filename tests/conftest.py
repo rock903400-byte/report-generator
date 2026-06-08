@@ -4,8 +4,19 @@ from unittest.mock import MagicMock
 
 sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent.parent))
 
+class _SessionState(dict):
+    """dict subclass that also supports attribute access like st.session_state.foo"""
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+    def __setattr__(self, name, val):
+        self[name] = val
+
 st = MagicMock()
 st.secrets = {}
+st.session_state = _SessionState()
 st.caption = MagicMock()
 st.markdown = MagicMock()
 st.success = MagicMock()
@@ -16,7 +27,7 @@ st.spinner = MagicMock()
 st.status = MagicMock()
 st.stop = MagicMock()
 st.selectbox = MagicMock()
-st.columns = MagicMock()
+st.columns = MagicMock(return_value=(MagicMock(), MagicMock()))
 st.checkbox = MagicMock()
 st.button = MagicMock()
 st.file_uploader = MagicMock()
@@ -24,6 +35,9 @@ st.download_button = MagicMock()
 st.set_page_config = MagicMock()
 st.title = MagicMock()
 st.write = MagicMock()
+st.text_input = MagicMock(return_value="")
+st.radio = MagicMock()
+st.expander = MagicMock()
 
 sys.modules["streamlit"] = st
 
