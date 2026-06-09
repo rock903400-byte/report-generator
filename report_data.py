@@ -38,7 +38,9 @@ def _clean_excel(df_m_raw, df_l_raw):
     df_l_raw["開支比"]   = defensive_clean_series(
         pd.to_numeric(df_l_raw["開支比"], errors="coerce").fillna(0), "開支比"
     )
-    df_l_raw["提撥率"]   = pd.to_numeric(df_l_raw.get("提撥率", 0), errors="coerce").fillna(0)
+    prov_raw = pd.to_numeric(df_l_raw.get("提撥率", pd.Series(0, index=df_l_raw.index, dtype=float)), errors="coerce")
+    df_l_raw["提撥率_缺失"] = prov_raw.isna()
+    df_l_raw["提撥率"] = prov_raw.fillna(0)
 
     df_m = df_m_raw.dropna(subset=["年月"]).sort_values(["社號", "年月"])
     df_l = df_l_raw.dropna(subset=["年月"]).sort_values(["社號", "年月"])
@@ -151,6 +153,13 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
     eLoan  = get_value(union_m, "貸放比", T0)
     eRate  = get_value(union_m, "儲蓄率", max_d)
     eProv  = float(union_l["提撥率"].iloc[-1]) if not union_l.empty and "提撥率" in union_l.columns else 0.0
+    if eProv == 0 and eOvd == 0:
+        eProv_note = "無逾期"
+    elif eProv == 0 and eOvd > 0:
+        is_missing = bool(union_l["提撥率_缺失"].iloc[-1]) if "提撥率_缺失" in union_l.columns else True
+        eProv_note = "資料缺失" if is_missing else ""
+    else:
+        eProv_note = ""
     memG   = safe_div(M0 - M1, M1)
     shrG   = safe_div(S0 - S1, S1)
 
@@ -197,7 +206,7 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
         M0=M0, M1=M1, M2=M2, M3=M3,
         S0=S0, S1=S1, S2=S2, S3=S3,
         R0=R0, R1=R1, O0=O0, O1=O1,
-        eOvd=eOvd, eLoan=eLoan, eRate=eRate, eProv=eProv,
+        eOvd=eOvd, eLoan=eLoan, eRate=eRate, eProv=eProv, eProv_note=eProv_note,
         memG=memG, shrG=shrG,
         curr_M=curr_M, curr_S=curr_S,
         memG_curr=memG_curr, shrG_curr=shrG_curr,
@@ -212,19 +221,25 @@ def compute_ovd_stats(d):
     if df_l.empty or not {"年月", "逾放比", "提撥率"}.issubset(df_l.columns):
         empty = dict(curr=0, avg12=0, hist_max=0, hist_max_d="", hist_min=0, hist_min_d="",
                      months_warn=0, months_total=0, trend="無資料", trend_color="#64748B",
-                     prov_curr=0, coverage=0)
+                     prov_curr=0, prov_note="", coverage=0)
         if df_l.empty:
             return empty
         try:
-            df = df_l[["年月", "逾放比", "提撥率"]].copy()
+            cols = ["年月", "逾放比", "提撥率"]
+            if "提撥率_缺失" in df_l.columns:
+                cols.append("提撥率_缺失")
+            df = df_l[cols].copy()
         except KeyError:
             return empty
     else:
-        df = df_l[["年月", "逾放比", "提撥率"]].copy()
+        cols = ["年月", "逾放比", "提撥率"]
+        if "提撥率_缺失" in df_l.columns:
+            cols.append("提撥率_缺失")
+        df = df_l[cols].copy()
     if df.empty:
         return dict(curr=0, avg12=0, hist_max=0, hist_max_d="", hist_min=0, hist_min_d="",
                     months_warn=0, months_total=0, trend="無資料", trend_color="#64748B",
-                    prov_curr=0, coverage=0)
+                    prov_curr=0, prov_note="", coverage=0)
     WARN = THRESHOLDS["ovd_safe_line"]
     curr = float(df["逾放比"].iloc[-1])
     avg12 = float(df["逾放比"].tail(12).mean())
@@ -241,6 +256,13 @@ def compute_ovd_stats(d):
     trend_color = "#10B981" if slope < -0.001 else ("#EF4444" if slope > 0.001 else "#64748B")
 
     prov_curr = float(df["提撥率"].iloc[-1])
+    prov_missing = bool(df["提撥率_缺失"].iloc[-1]) if "提撥率_缺失" in df.columns else True
+    if prov_curr == 0 and curr == 0:
+        prov_note = "無逾期"
+    elif prov_curr == 0 and curr > 0 and prov_missing:
+        prov_note = "資料缺失"
+    else:
+        prov_note = ""
     coverage = safe_div(prov_curr, curr) if curr > 0 else 0.0
 
     return dict(
@@ -248,5 +270,5 @@ def compute_ovd_stats(d):
         hist_min=hist_min, hist_min_d=hist_min_d,
         months_warn=months_warn, months_total=months_total,
         trend=trend, trend_color=trend_color,
-        prov_curr=prov_curr, coverage=coverage,
+        prov_curr=prov_curr, prov_note=prov_note, coverage=coverage,
     )

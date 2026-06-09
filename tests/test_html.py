@@ -288,3 +288,21 @@ class TestBuildReport:
         charts = {"member_capital_trend": "<div>chart</div>"}
         html = build_report(d, charts)
         assert '最新逾放比' in html
+
+    def test_kpi_prov_note_no_ovd(self):
+        d = self._make_d()
+        d["eProv"] = 0.0
+        d["eOvd"] = 0.0
+        d["eProv_note"] = "無逾期"
+        charts = {"member_capital_trend": "<div>chart</div>"}
+        html = build_report(d, charts)
+        assert '無逾期' in html
+
+    def test_kpi_prov_note_missing(self):
+        d = self._make_d()
+        d["eProv"] = 0.0
+        d["eOvd"] = 0.035
+        d["eProv_note"] = "資料缺失"
+        charts = {"member_capital_trend": "<div>chart</div>"}
+        html = build_report(d, charts)
+        assert '資料缺失' in html

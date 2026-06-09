@@ -68,6 +68,25 @@ class TestBuildAiPrompt:
         assert '財務顧問' in prompt
         assert '繁體中文' in prompt
 
+    def test_new_prompt_format_keywords(self):
+        d = _make_d()
+        prompt = build_ai_prompt(d)
+        assert '財務健康評分卡' in prompt
+        assert '量化改善建議' in prompt
+        assert '嚴重度' in prompt
+
+    def test_prov_note_missing(self):
+        d = _make_d()
+        d["eProv_note"] = "資料缺失"
+        prompt = build_ai_prompt(d)
+        assert '無資料（原始缺漏）' in prompt
+
+    def test_prov_note_no_ovd(self):
+        d = _make_d()
+        d["eProv_note"] = "無逾期"
+        prompt = build_ai_prompt(d)
+        assert '無逾期貸款' in prompt
+
 
 class TestCallGemini:
     @patch("report_ai.genai.Client")

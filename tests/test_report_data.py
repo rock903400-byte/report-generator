@@ -142,3 +142,67 @@ def test_compute_ovd_stats_empty():
     stats = compute_ovd_stats(d)
     assert stats["curr"] == 0
     assert stats["trend"] == "無資料"
+    assert stats["prov_note"] == ""
+
+
+# ── eProv_note ─────────────────────────────────────────────────
+
+def test_extract_union_data_eProv_note_normal():
+    from report_data import _clean_excel, extract_union_data
+    df_m = pd.DataFrame({
+        "年月": ["11504"], "社號": ["3403"], "社名": ["海星"],
+        "社員數": ["230"], "股金": ["7e7"], "貸放比": ["0.55"], "儲蓄率": ["0.89"],
+    })
+    df_l = pd.DataFrame({
+        "年月": ["11504"], "社號": ["3403"], "社名": ["海星"],
+        "開支比": ["0.98"], "逾放比": ["0.035"], "逾期貸款": ["250e4"],
+        "提撥率": ["0.015"],
+    })
+    cm, cl = _clean_excel(df_m, df_l)
+    d = extract_union_data(cm, cl, pd.DataFrame(), "3403")
+    assert d["eProv_note"] == ""
+
+
+def test_extract_union_data_eProv_note_no_ovd():
+    from report_data import _clean_excel, extract_union_data
+    df_m = pd.DataFrame({
+        "年月": ["11504"], "社號": ["3403"], "社名": ["海星"],
+        "社員數": ["230"], "股金": ["7e7"], "貸放比": ["0.55"], "儲蓄率": ["0.89"],
+    })
+    df_l = pd.DataFrame({
+        "年月": ["11504"], "社號": ["3403"], "社名": ["海星"],
+        "開支比": ["0.98"], "逾放比": ["0"], "逾期貸款": ["0"],
+        "提撥率": ["0"],
+    })
+    cm, cl = _clean_excel(df_m, df_l)
+    d = extract_union_data(cm, cl, pd.DataFrame(), "3403")
+    assert d["eProv_note"] == "無逾期"
+
+
+def test_extract_union_data_eProv_note_missing():
+    from report_data import _clean_excel, extract_union_data
+    df_m = pd.DataFrame({
+        "年月": ["11504"], "社號": ["3403"], "社名": ["海星"],
+        "社員數": ["230"], "股金": ["7e7"], "貸放比": ["0.55"], "儲蓄率": ["0.89"],
+    })
+    df_l = pd.DataFrame({
+        "年月": ["11504"], "社號": ["3403"], "社名": ["海星"],
+        "開支比": ["0.98"], "逾放比": ["0.035"], "逾期貸款": ["250e4"],
+        "提撥率": [None],
+    })
+    cm, cl = _clean_excel(df_m, df_l)
+    d = extract_union_data(cm, cl, pd.DataFrame(), "3403")
+    assert d["eProv_note"] == "資料缺失"
+
+
+def test_compute_ovd_stats_prov_note():
+    from report_data import compute_ovd_stats
+    df_l = pd.DataFrame({
+        "年月": pd.to_datetime(["2026-04-01", "2025-12-01"]),
+        "逾放比": [0.0, 0.0],
+        "提撥率": [0.0, 0.0],
+        "提撥率_缺失": [False, False],
+    })
+    d = {"df_l": df_l}
+    stats = compute_ovd_stats(d)
+    assert stats["prov_note"] == "無逾期"

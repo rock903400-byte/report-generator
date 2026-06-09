@@ -165,13 +165,29 @@ def build_kpi_yoy_table(d):
             rs = rs.drop(cur_yr, errors="ignore")
         lr = rs.to_dict()
 
+    def _fmt_prov(yr):
+        prov_v = _lval(yr, "提撥率")
+        ovd_v = _lval(yr, "逾放比")
+        if prov_v is None:
+            return None
+        if prov_v == 0 and ovd_v == 0:
+            return "0.0%（無逾期）"
+        if prov_v == 0 and ovd_v is not None and ovd_v > 0:
+            r = l_ye[l_ye["年月"].dt.year == yr]
+            is_missing = bool(r.iloc[-1]["提撥率_缺失"]) if not r.empty and "提撥率_缺失" in r.columns else True
+            if is_missing:
+                return "—（資料缺失）"
+        return fmt_pct(prov_v)
+
+    prov_vals = {yr: _fmt_prov(yr) for yr in all_years}
+
     rows_def = [
         ("社員數",  {yr: _mval(yr, "社員數") for yr in all_years}, lambda v: f"{int(v):,}人",  "up"),
         ("股金",    {yr: _mval(yr, "股金")   for yr in all_years}, fmt,                         "up"),
         ("貸放比",  {yr: _mval(yr, "貸放比") for yr in all_years}, fmt_pct,                     "range"),
         ("逾放比",  {yr: _lval(yr, "逾放比") for yr in all_years}, fmt_pct,                     "down"),
         ("開支比",  {yr: _lval(yr, "開支比") for yr in all_years}, fmt_pct,                     "down"),
-        ("提撥率",  {yr: _lval(yr, "提撥率") for yr in all_years}, fmt_pct,                     "up"),
+        ("提撥率",  prov_vals, lambda v: v if isinstance(v, str) else fmt_pct(v),               "up"),
     ]
     if lr:
         rows_def.append(("放款利率*", {yr: lr.get(yr) for yr in all_years},
@@ -179,6 +195,8 @@ def build_kpi_yoy_table(d):
 
     def _bg(direction, curr, prev):
         if curr is None or prev is None:
+            return ""
+        if not isinstance(curr, (int, float)) or not isinstance(prev, (int, float)):
             return ""
         if direction == "up":
             return "#D1FAE5" if curr > prev * 1.001 else ("#FEE2E2" if curr < prev * 0.999 else "")
@@ -245,6 +263,20 @@ def build_report(d, charts, ai_analysis=None):
     sav_ok = d["eRate"] >= sav_thr
     prov_ok = d["eProv"] >= prov_thr
 
+    prov_note = d.get("eProv_note", "")
+    if prov_note == "資料缺失":
+        prov_value = "—（資料缺失）"
+        prov_sub = "原始資料缺漏"
+        prov_good = True
+    elif prov_note == "無逾期":
+        prov_value = "0.0%（無逾期）"
+        prov_sub = "無逾期貸款，無需提撥"
+        prov_good = True
+    else:
+        prov_value = fmt_pct(d["eProv"])
+        prov_sub = f"{'充足 ✓' if prov_ok else '不足 ✗'}（門檻 {prov_thr * 100:.0f}%）"
+        prov_good = prov_ok
+
     # ── KPI 卡片（風險觸發數排第一） ──
     rc = d.get("risk_count", 0)
     kpi_cards = [
@@ -269,9 +301,9 @@ def build_report(d, charts, ai_analysis=None):
         {"label": "開支比(年)", "value": fmt_pct(d["R0"]),
          "sub": f"{'⚠ 虧損' if d['R0'] > 1.0 else '✓ 盈餘'} (損益平衡 100%)",
          "good": d["R0"] <= 1.0},
-        {"label": "提撥率",  "value": fmt_pct(d["eProv"]),
-         "sub": f"{'充足 ✓' if prov_ok else '不足 ✗'}（門檻 {prov_thr * 100:.0f}%）",
-         "good": prov_ok},
+        {"label": "提撥率",  "value": prov_value,
+         "sub": prov_sub,
+         "good": prov_good},
     ]
 
     def kpi_card_html(card):
@@ -323,9 +355,21 @@ def build_report(d, charts, ai_analysis=None):
 
     recent_l = d["df_l"].tail(12)[["年月", "逾放比", "開支比", "提撥率", "逾期貸款"]].copy()
     recent_l["年月"] = recent_l["年月"].dt.strftime("%Y-%m")
+
+    def _fmt_prov_row(row):
+        prov = row["提撥率"]
+        ovd = row["逾放比"]
+        if prov == 0 and ovd == 0:
+            return "0.0%（無逾期）"
+        if prov == 0 and ovd > 0:
+            is_missing = row.get("提撥率_缺失", True)
+            if is_missing:
+                return "—（資料缺失）"
+        return fmt_pct(prov)
+
+    recent_l["提撥率"] = recent_l.apply(_fmt_prov_row, axis=1)
     recent_l["逾放比"] = recent_l["逾放比"].apply(fmt_pct)
     recent_l["開支比"] = recent_l["開支比"].apply(fmt_pct)
-    recent_l["提撥率"] = recent_l["提撥率"].apply(fmt_pct)
     recent_l["逾期貸款"] = recent_l["逾期貸款"].apply(fmt)
 
     table_m_html = df_to_html_table(recent_m)
