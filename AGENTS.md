@@ -21,17 +21,17 @@ tests/test_*.py  (14 新增測試檔)
 
 ```
 common/          → 共用工具（dates/utils/thresholds/cleaning/classifier/constants）
-report_config.py → config, REGIONS, THRESHOLDS, GEMINI_MODEL, fmt/fmt_pct
+report_config.py → config, REGIONS, GEMINI_MODEL, fmt/fmt_pct
 report_data.py   → load_data*() → (df_m, df_l, df_csv), extract_union_data() → d dict
 report_charts.py → generate_all_charts(d) → charts dict (Plotly HTML divs)
-report_ai.py     → analyze_with_gemini(d, api_key) → str | None
+report_ai.py     → analyze_with_gemini(d, api_key) → (str | None, str | None)
 report_html.py   → build_report(d, charts, ai_analysis)  → HTML str (Jinja2: templates/report.html)
 ```
 
 ## Tests
 
 ```bash
-python -m pytest tests/ -v                    # 226 tests, 96% coverage
+python -m pytest tests/ -v                    # 235 tests, 96% coverage
 python -m pytest tests/ --cov --cov-fail-under=80  # CI gate
 python -m pytest tests/test_charts.py -v      # 單檔
 python -m pytest tests/test_classifier.py::TestClassifySpecialCare -v  # 單類
@@ -72,9 +72,29 @@ python -m pytest tests/test_classifier.py::TestClassifySpecialCare -v  # 單類
 - SDK: `google-genai`（新版），非已棄用之 `google-generativeai`
 - Model: `GEMINI_MODEL` in `report_config.py`（改此處 → HTML footer 自動跟）
 - `max_output_tokens=2048`
-- API key: env `GEMINI_API_KEY` 或 `st.secrets.GEMINI_API_KEY`；失敗回傳 `None`，區塊不顯示
-- `_md_to_html()` 轉 Gemini markdown（`**粗體**`、`#`、`-`/`1.` 列表）
+- API key: env `GEMINI_API_KEY` 或 `st.secrets.GEMINI_API_KEY`；失敗回傳 `(None, error_msg)`
+- `analyze_with_gemini()` 回傳 `(str | None, str | None)`：`(分析結果, 錯誤訊息)`
+- `_md_to_html()` 轉 Gemini markdown（`**粗體**`、`#`、`-`/`1.` 列表，**不支援表格**）
 - `_is_ai_truncated()` 檢查截斷（以 `**` / `*` / `-` / `：` 結尾 → 顯示警告）
+
+### Prompt 結構
+
+語氣：專業、客觀、簡潔，像寫給理事會的內部報告。總字數 600 字內。
+
+1. **財務健康評分卡**（巢狀列表格式）
+   - 成長性：3Y 社員成長 >10% → 8-10 分；0-10% → 5-7 分；<0% → 1-4 分
+   - 資產品質：逾放比 <1% → 9-10 分；1-2% → 6-8 分；2-5% → 3-5 分；>5% → 1-2 分
+   - 獲利能力：開支比 <90% → 8-10 分；90-100% → 5-7 分；>100% → 1-4 分
+   - 流動性：貸放比 40-80% → 8-10 分；30-40% 或 80-90% → 5-7 分；<30% 或 >90% → 1-4 分
+   - 總體評分：四維度平均，資產品質權重 1.5 倍
+
+2. **風險評估**（按嚴重程度排序，標註高/中/低）
+
+3. **量化改善建議**（含公式、目標、預期效益、時間框架）
+
+4. **亮點**（若有顯著優勢）
+
+邊界情況：資料不足 3 年時以實際可用年數評估並註明。
 
 ## Key Pitfalls
 
