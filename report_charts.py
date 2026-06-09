@@ -1,14 +1,21 @@
 """
 Plotly 圖表產生（參數化，與社別脫鉤）
 """
-import pandas as pd
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from report_config import THRESHOLDS, THEME_BG, C, PLOTLY_CFG, fmt, fmt_pct, safe_div
 
+
 def style_fig(fig, title="", height=500):
     fig.update_layout(
-        title=dict(text=title, font=dict(size=18, color=C["text"]), x=0, xanchor="left", pad=dict(l=8)) if title else None,
+        title=(
+            dict(
+                text=title, font=dict(size=18, color=C["text"]), x=0, xanchor="left", pad=dict(l=8)
+            )
+            if title
+            else None
+        ),
         plot_bgcolor="#FFFFFF",
         paper_bgcolor=THEME_BG,
         font=dict(size=13, color=C["text"]),
@@ -17,25 +24,37 @@ def style_fig(fig, title="", height=500):
         dragmode=False,
         hovermode="x unified",
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
-            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="rgba(0,0,0,0.1)",
+            borderwidth=1,
             font=dict(size=13),
         ),
     )
     fig.update_xaxes(
         fixedrange=True,
         gridcolor="rgba(0,0,0,0)",
-        showline=True, linecolor="rgba(0,0,0,0.12)", linewidth=1,
-        tickfont=dict(size=12), tickangle=-30,
+        showline=True,
+        linecolor="rgba(0,0,0,0.12)",
+        linewidth=1,
+        tickfont=dict(size=12),
+        tickangle=-30,
     )
     fig.update_yaxes(
         fixedrange=True,
         gridcolor="rgba(0,0,0,0.07)",
         showline=False,
         tickfont=dict(size=12),
-        zeroline=True, zerolinecolor="rgba(0,0,0,0.15)", zerolinewidth=1,
+        zeroline=True,
+        zerolinecolor="rgba(0,0,0,0.15)",
+        zerolinewidth=1,
     )
     return fig
+
 
 def to_html_div(fig):
     return fig.to_html(full_html=False, include_plotlyjs=False, config=PLOTLY_CFG)
@@ -63,108 +82,176 @@ def chart_member_capital_trend(d):
     ye_labels = [f"民{d.year - 1911}年底" for d in ye["年月"]]
 
     fig = make_subplots(
-        rows=2, cols=1,
+        rows=2,
+        cols=1,
         shared_xaxes=True,
         vertical_spacing=0.14,
         subplot_titles=["社員數（人）", "股金（元）"],
     )
 
     # ── 上排：社員數 面積折線 ──
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["社員數"],
-        name="社員數", mode="lines",
-        line=dict(color=m_line_color, width=2.5),
-        fill="tozeroy", fillcolor=m_fill,
-        hovertemplate="%{x}<br>社員數：%{y:,} 人<extra></extra>",
-    ), row=1, col=1)
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["社員數"],
+            name="社員數",
+            mode="lines",
+            line=dict(color=m_line_color, width=2.5),
+            fill="tozeroy",
+            fillcolor=m_fill,
+            hovertemplate="%{x}<br>社員數：%{y:,} 人<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
     # 年底標記
     if not ye.empty:
-        fig.add_trace(go.Scatter(
-            x=ye["年月"], y=ye["社員數"],
-            mode="markers+text", name="",
-            marker=dict(size=9, color="white", line=dict(color=m_line_color, width=2.5)),
-            text=ye_labels, textposition="top center",
-            textfont=dict(size=10, color=C["text"]),
-            hovertemplate="%{text}：%{y:,} 人<extra></extra>",
-            showlegend=False,
-        ), row=1, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=ye["年月"],
+                y=ye["社員數"],
+                mode="markers+text",
+                name="",
+                marker=dict(size=9, color="white", line=dict(color=m_line_color, width=2.5)),
+                text=ye_labels,
+                textposition="top center",
+                textfont=dict(size=10, color=C["text"]),
+                hovertemplate="%{text}：%{y:,} 人<extra></extra>",
+                showlegend=False,
+            ),
+            row=1,
+            col=1,
+        )
     # T3 基準虛線
     if d["M3"] > 0:
         fig.add_hline(
-            y=d["M3"], row=1, col=1,
-            line_dash="dot", line_color=C["amber"], line_width=1.5, opacity=0.7,
+            y=d["M3"],
+            row=1,
+            col=1,
+            line_dash="dot",
+            line_color=C["amber"],
+            line_width=1.5,
+            opacity=0.7,
             annotation_text=f"三年前基準 {int(d['M3']):,}人",
             annotation_position="bottom right",
             annotation_font=dict(size=10, color=C["amber"]),
         )
     fig.add_annotation(
-        x=last["年月"], y=last["社員數"],
-        text=(f"<b>{int(last['社員數']):,} 人</b>  "
-              f"<span style='color:{m_color}'>{m_arrow} {abs(m_diff):,}人 ({fmt_pct(d['memG_curr'])})</span>"),
+        x=last["年月"],
+        y=last["社員數"],
+        text=(
+            f"<b>{int(last['社員數']):,} 人</b>  "
+            f"<span style='color:{m_color}'>{m_arrow} {abs(m_diff):,}人 ({fmt_pct(d['memG_curr'])})</span>"
+        ),
         font=dict(size=12, color=m_line_color),
-        showarrow=True, arrowhead=2, arrowcolor=m_line_color, ax=0, ay=-42,
-        bgcolor="rgba(255,255,255,0.92)", bordercolor=m_line_color, borderpad=5, borderwidth=1,
-        xref="x", yref="y",
+        showarrow=True,
+        arrowhead=2,
+        arrowcolor=m_line_color,
+        ax=0,
+        ay=-42,
+        bgcolor="rgba(255,255,255,0.92)",
+        bordercolor=m_line_color,
+        borderpad=5,
+        borderwidth=1,
+        xref="x",
+        yref="y",
     )
 
     # ── 下排：股金 面積折線 ──
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["股金"],
-        name="股金", mode="lines",
-        line=dict(color=s_line_color, width=2.5),
-        fill="tozeroy", fillcolor=s_fill,
-        hovertemplate="%{x}<br>股金：%{customdata}<extra></extra>",
-        customdata=[fmt(v) for v in df["股金"]],
-    ), row=2, col=1)
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["股金"],
+            name="股金",
+            mode="lines",
+            line=dict(color=s_line_color, width=2.5),
+            fill="tozeroy",
+            fillcolor=s_fill,
+            hovertemplate="%{x}<br>股金：%{customdata}<extra></extra>",
+            customdata=[fmt(v) for v in df["股金"]],
+        ),
+        row=2,
+        col=1,
+    )
     # 年底標記
     if not ye.empty:
-        fig.add_trace(go.Scatter(
-            x=ye["年月"], y=ye["股金"],
-            mode="markers+text", name="",
-            marker=dict(size=9, color="white", line=dict(color=s_line_color, width=2.5)),
-            text=ye_labels, textposition="top center",
-            textfont=dict(size=10, color=C["text"]),
-            hovertemplate="%{text}：%{customdata}<extra></extra>",
-            customdata=[fmt(v) for v in ye["股金"]],
-            showlegend=False,
-        ), row=2, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=ye["年月"],
+                y=ye["股金"],
+                mode="markers+text",
+                name="",
+                marker=dict(size=9, color="white", line=dict(color=s_line_color, width=2.5)),
+                text=ye_labels,
+                textposition="top center",
+                textfont=dict(size=10, color=C["text"]),
+                hovertemplate="%{text}：%{customdata}<extra></extra>",
+                customdata=[fmt(v) for v in ye["股金"]],
+                showlegend=False,
+            ),
+            row=2,
+            col=1,
+        )
     # T3 基準虛線
     if d["S3"] > 0:
         fig.add_hline(
-            y=d["S3"], row=2, col=1,
-            line_dash="dot", line_color=C["amber"], line_width=1.5, opacity=0.7,
+            y=d["S3"],
+            row=2,
+            col=1,
+            line_dash="dot",
+            line_color=C["amber"],
+            line_width=1.5,
+            opacity=0.7,
             annotation_text=f"三年前基準 {fmt(d['S3'])}",
             annotation_position="bottom right",
             annotation_font=dict(size=10, color=C["amber"]),
         )
     fig.add_annotation(
-        x=last["年月"], y=last["股金"],
-        text=(f"<b>{fmt(last['股金'])}</b>  "
-              f"<span style='color:{s_color}'>{s_arrow} {fmt(abs(s_diff))} ({fmt_pct(d['shrG_curr'])})</span>"),
+        x=last["年月"],
+        y=last["股金"],
+        text=(
+            f"<b>{fmt(last['股金'])}</b>  "
+            f"<span style='color:{s_color}'>{s_arrow} {fmt(abs(s_diff))} ({fmt_pct(d['shrG_curr'])})</span>"
+        ),
         font=dict(size=12, color=s_line_color),
-        showarrow=True, arrowhead=2, arrowcolor=s_line_color, ax=0, ay=-42,
-        bgcolor="rgba(255,255,255,0.92)", bordercolor=s_line_color, borderpad=5, borderwidth=1,
-        xref="x", yref="y2",
+        showarrow=True,
+        arrowhead=2,
+        arrowcolor=s_line_color,
+        ax=0,
+        ay=-42,
+        bgcolor="rgba(255,255,255,0.92)",
+        bordercolor=s_line_color,
+        borderpad=5,
+        borderwidth=1,
+        xref="x",
+        yref="y2",
     )
 
     fig.update_layout(
-        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor=THEME_BG,
         font=dict(size=13, color=C["text"]),
         margin=dict(l=55, r=25, t=45, b=55),
         height=560,
-        dragmode=False, hovermode="x unified",
+        dragmode=False,
+        hovermode="x unified",
         showlegend=False,
     )
     for ann in fig.layout.annotations:
         if ann.yref == "paper":
             ann.font.update(size=14, color=C["text"])
     fig.update_xaxes(
-        fixedrange=True, gridcolor="rgba(0,0,0,0)",
-        showline=True, linecolor="rgba(0,0,0,0.12)",
-        tickfont=dict(size=11), tickangle=-30,
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0)",
+        showline=True,
+        linecolor="rgba(0,0,0,0.12)",
+        tickfont=dict(size=11),
+        tickangle=-30,
     )
     fig.update_yaxes(
-        fixedrange=True, gridcolor="rgba(0,0,0,0.10)", tickfont=dict(size=11),
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.10)",
+        tickfont=dict(size=11),
     )
     fig.update_yaxes(title_text="人數", tickformat=",d", row=1, col=1)
     fig.update_yaxes(title_text="元", tickformat=".2s", row=2, col=1)
@@ -174,88 +261,177 @@ def chart_member_capital_trend(d):
 def chart_loan_savings(d):
     df = d["df_m"][["年月", "貸放比", "儲蓄率"]].copy()
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["貸放比"],
-        name="貸放比", mode="lines+markers",
-        line=dict(color=C["blue"], width=2.5),
-        marker=dict(size=7, line=dict(width=2, color="white")),
-        fill="tozeroy", fillcolor="rgba(59,130,246,0.08)",
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["儲蓄率"],
-        name="儲蓄率", mode="lines+markers",
-        line=dict(color=C["green"], width=2.5, dash="dot"),
-        marker=dict(size=7, line=dict(width=2, color="white")),
-    ), secondary_y=True)
-    fig.add_hline(y=THRESHOLDS["stable_loan_min"], line_dash="dash",
-                  line_color=C["red"], opacity=0.6,
-                  annotation_text="貸放比下限 40%",
-                  annotation_font=dict(size=11, color=C["red"]))
-    fig.add_hline(y=THRESHOLDS["stable_loan_max"], line_dash="dash",
-                  line_color=C["amber"], opacity=0.6,
-                  annotation_text="貸放比上限 80%",
-                  annotation_font=dict(size=11, color=C["amber"]))
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["貸放比"],
+            name="貸放比",
+            mode="lines+markers",
+            line=dict(color=C["blue"], width=2.5),
+            marker=dict(size=7, line=dict(width=2, color="white")),
+            fill="tozeroy",
+            fillcolor="rgba(59,130,246,0.08)",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["儲蓄率"],
+            name="儲蓄率",
+            mode="lines+markers",
+            line=dict(color=C["green"], width=2.5, dash="dot"),
+            marker=dict(size=7, line=dict(width=2, color="white")),
+        ),
+        secondary_y=True,
+    )
+    fig.add_hline(
+        y=THRESHOLDS["stable_loan_min"],
+        line_dash="dash",
+        line_color=C["red"],
+        opacity=0.6,
+        annotation_text="貸放比下限 40%",
+        annotation_font=dict(size=11, color=C["red"]),
+    )
+    fig.add_hline(
+        y=THRESHOLDS["stable_loan_max"],
+        line_dash="dash",
+        line_color=C["amber"],
+        opacity=0.6,
+        annotation_text="貸放比上限 80%",
+        annotation_font=dict(size=11, color=C["amber"]),
+    )
     fig.update_layout(
         title=None,
-        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
-        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
-        height=400, dragmode=False, hovermode="x unified",
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]),
+        margin=dict(l=55, r=25, t=20, b=55),
+        height=400,
+        dragmode=False,
+        hovermode="x unified",
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
-            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="rgba(0,0,0,0.1)",
+            borderwidth=1,
         ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
-                     showline=True, linecolor="rgba(0,0,0,0.12)",
-                     tickfont=dict(size=12), tickangle=-30)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
-                     tickfont=dict(size=12), secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
-                     tickfont=dict(size=12), secondary_y=True)
+    fig.update_xaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0)",
+        showline=True,
+        linecolor="rgba(0,0,0,0.12)",
+        tickfont=dict(size=12),
+        tickangle=-30,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.07)",
+        tickformat=".1%",
+        tickfont=dict(size=12),
+        secondary_y=False,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.07)",
+        tickformat=".1%",
+        tickfont=dict(size=12),
+        secondary_y=True,
+    )
     return to_html_div(fig)
 
 
 def chart_risk_trend(d):
     df_o = d["df_l"][["年月", "逾放比", "開支比"]].copy()
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(
-        x=df_o["年月"], y=df_o["逾放比"],
-        name="逾放比", mode="lines+markers",
-        line=dict(color=C["red"], width=2.5),
-        marker=dict(size=7, line=dict(width=2, color="white")),
-        fill="tozeroy", fillcolor="rgba(239,68,68,0.08)",
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=df_o["年月"], y=df_o["開支比"],
-        name="開支比", mode="lines+markers",
-        line=dict(color=C["indigo"], width=2.5, dash="dot"),
-        marker=dict(size=7, line=dict(width=2, color="white")),
-    ), secondary_y=True)
-    fig.add_hline(y=THRESHOLDS["ovd_safe_line"], line_dash="dash",
-                  line_color=C["amber"], opacity=0.7,
-                  annotation_text="逾放比警戒 2%",
-                  annotation_font=dict(size=11, color=C["amber"]))
-    fig.add_hline(y=1.0, line_dash="dash", line_color=C["red"],
-                  opacity=0.6, annotation_text="開支比損益平衡 100%",
-                  annotation_font=dict(size=11, color=C["red"]),
-                  secondary_y=True)
+    fig.add_trace(
+        go.Scatter(
+            x=df_o["年月"],
+            y=df_o["逾放比"],
+            name="逾放比",
+            mode="lines+markers",
+            line=dict(color=C["red"], width=2.5),
+            marker=dict(size=7, line=dict(width=2, color="white")),
+            fill="tozeroy",
+            fillcolor="rgba(239,68,68,0.08)",
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=df_o["年月"],
+            y=df_o["開支比"],
+            name="開支比",
+            mode="lines+markers",
+            line=dict(color=C["indigo"], width=2.5, dash="dot"),
+            marker=dict(size=7, line=dict(width=2, color="white")),
+        ),
+        secondary_y=True,
+    )
+    fig.add_hline(
+        y=THRESHOLDS["ovd_safe_line"],
+        line_dash="dash",
+        line_color=C["amber"],
+        opacity=0.7,
+        annotation_text="逾放比警戒 2%",
+        annotation_font=dict(size=11, color=C["amber"]),
+    )
+    fig.add_hline(
+        y=1.0,
+        line_dash="dash",
+        line_color=C["red"],
+        opacity=0.6,
+        annotation_text="開支比損益平衡 100%",
+        annotation_font=dict(size=11, color=C["red"]),
+        secondary_y=True,
+    )
     fig.update_layout(
         title=None,
-        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
-        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
-        height=400, dragmode=False, hovermode="x unified",
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]),
+        margin=dict(l=55, r=25, t=20, b=55),
+        height=400,
+        dragmode=False,
+        hovermode="x unified",
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
-            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="rgba(0,0,0,0.1)",
+            borderwidth=1,
         ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
-                     showline=True, linecolor="rgba(0,0,0,0.12)",
-                     tickfont=dict(size=12), tickangle=-30)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".2%",
-                     tickfont=dict(size=12), secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
-                     tickfont=dict(size=12), secondary_y=True)
+    fig.update_xaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0)",
+        showline=True,
+        linecolor="rgba(0,0,0,0.12)",
+        tickfont=dict(size=12),
+        tickangle=-30,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.07)",
+        tickformat=".2%",
+        tickfont=dict(size=12),
+        secondary_y=False,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.07)",
+        tickformat=".1%",
+        tickfont=dict(size=12),
+        secondary_y=True,
+    )
     return to_html_div(fig)
 
 
@@ -268,53 +444,79 @@ def chart_ovd_full_history(d):
 
     fig = go.Figure()
     fig.add_hrect(
-        y0=WARN, y1=y_max,
-        fillcolor="rgba(239,68,68,0.07)", line_width=0,
+        y0=WARN,
+        y1=y_max,
+        fillcolor="rgba(239,68,68,0.07)",
+        line_width=0,
         annotation_text="警戒區（逾放比 > 2%）",
         annotation_position="top left",
         annotation_font=dict(color=C["red"], size=12),
     )
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["逾放比"],
-        name="逾放比（月）", mode="lines+markers",
-        line=dict(color=C["red"], width=2.5),
-        marker=dict(size=5, line=dict(width=1.5, color="white")),
-        fill="tozeroy", fillcolor="rgba(239,68,68,0.06)",
-    ))
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["3M均"],
-        name="3M 均線", mode="lines",
-        line=dict(color=C["amber"], width=2.5, dash="dot"),
-    ))
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["6M均"],
-        name="6M 均線", mode="lines",
-        line=dict(color=C["blue"], width=2.5, dash="dash"),
-    ))
-    fig.add_hline(y=WARN, line_dash="dash", line_color=C["amber"],
-                  line_width=2, annotation_text="警戒線 2%",
-                  annotation_position="bottom right")
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["逾放比"],
+            name="逾放比（月）",
+            mode="lines+markers",
+            line=dict(color=C["red"], width=2.5),
+            marker=dict(size=5, line=dict(width=1.5, color="white")),
+            fill="tozeroy",
+            fillcolor="rgba(239,68,68,0.06)",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["3M均"],
+            name="3M 均線",
+            mode="lines",
+            line=dict(color=C["amber"], width=2.5, dash="dot"),
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["6M均"],
+            name="6M 均線",
+            mode="lines",
+            line=dict(color=C["blue"], width=2.5, dash="dash"),
+        )
+    )
+    fig.add_hline(
+        y=WARN,
+        line_dash="dash",
+        line_color=C["amber"],
+        line_width=2,
+        annotation_text="警戒線 2%",
+        annotation_position="bottom right",
+    )
 
     peak_idx = df["逾放比"].idxmax()
-    fig.add_trace(go.Scatter(
-        x=[df.loc[peak_idx, "年月"]], y=[df.loc[peak_idx, "逾放比"]],
-        mode="markers+text",
-        marker=dict(color=C["red"], size=12, symbol="triangle-up"),
-        text=[f"最高 {fmt_pct(df.loc[peak_idx, '逾放比'])}"],
-        textposition="top center",
-        textfont=dict(size=12, color=C["red"]),
-        showlegend=False,
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=[df.loc[peak_idx, "年月"]],
+            y=[df.loc[peak_idx, "逾放比"]],
+            mode="markers+text",
+            marker=dict(color=C["red"], size=12, symbol="triangle-up"),
+            text=[f"最高 {fmt_pct(df.loc[peak_idx, '逾放比'])}"],
+            textposition="top center",
+            textfont=dict(size=12, color=C["red"]),
+            showlegend=False,
+        )
+    )
     low_idx = df["逾放比"].idxmin()
-    fig.add_trace(go.Scatter(
-        x=[df.loc[low_idx, "年月"]], y=[df.loc[low_idx, "逾放比"]],
-        mode="markers+text",
-        marker=dict(color=C["green"], size=12, symbol="triangle-down"),
-        text=[f"最低 {fmt_pct(df.loc[low_idx, '逾放比'])}"],
-        textposition="bottom center",
-        textfont=dict(size=12, color=C["green"]),
-        showlegend=False,
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=[df.loc[low_idx, "年月"]],
+            y=[df.loc[low_idx, "逾放比"]],
+            mode="markers+text",
+            marker=dict(color=C["green"], size=12, symbol="triangle-down"),
+            text=[f"最低 {fmt_pct(df.loc[low_idx, '逾放比'])}"],
+            textposition="bottom center",
+            textfont=dict(size=12, color=C["green"]),
+            showlegend=False,
+        )
+    )
 
     style_fig(fig, height=440)
     fig.update_yaxes(tickformat=".2%", range=[0, y_max])
@@ -324,42 +526,82 @@ def chart_ovd_full_history(d):
 def chart_ovd_amount(d):
     df = d["df_l"][["年月", "逾期貸款", "逾放比"]].copy()
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Bar(
-        x=df["年月"], y=df["逾期貸款"],
-        name="逾期貸款金額",
-        marker_color=C["red"], opacity=0.75,
-        marker_line=dict(width=0),
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=df["年月"], y=df["逾放比"],
-        name="逾放比",
-        mode="lines+markers",
-        line=dict(color=C["amber"], width=2.5),
-        marker=dict(size=7, line=dict(width=2, color="white")),
-    ), secondary_y=True)
-    fig.add_hline(y=THRESHOLDS["ovd_safe_line"], line_dash="dash",
-                  line_color=C["red"], opacity=0.6,
-                  annotation_text="警戒線 2%",
-                  annotation_font=dict(size=11, color=C["red"]),
-                  secondary_y=True)
+    fig.add_trace(
+        go.Bar(
+            x=df["年月"],
+            y=df["逾期貸款"],
+            name="逾期貸款金額",
+            marker_color=C["red"],
+            opacity=0.75,
+            marker_line=dict(width=0),
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=df["年月"],
+            y=df["逾放比"],
+            name="逾放比",
+            mode="lines+markers",
+            line=dict(color=C["amber"], width=2.5),
+            marker=dict(size=7, line=dict(width=2, color="white")),
+        ),
+        secondary_y=True,
+    )
+    fig.add_hline(
+        y=THRESHOLDS["ovd_safe_line"],
+        line_dash="dash",
+        line_color=C["red"],
+        opacity=0.6,
+        annotation_text="警戒線 2%",
+        annotation_font=dict(size=11, color=C["red"]),
+        secondary_y=True,
+    )
 
     fig.update_layout(
         title=None,
-        plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
-        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
-        height=420, dragmode=False, hovermode="x unified",
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]),
+        margin=dict(l=55, r=25, t=20, b=55),
+        height=420,
+        dragmode=False,
+        hovermode="x unified",
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
-            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="rgba(0,0,0,0.1)",
+            borderwidth=1,
         ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)",
-                     showline=True, linecolor="rgba(0,0,0,0.12)",
-                     tickfont=dict(size=12), tickangle=-30)
-    fig.update_yaxes(fixedrange=True, tickformat=".2s", title_text="逾期貸款（元）",
-                     gridcolor="rgba(0,0,0,0.07)", tickfont=dict(size=12), secondary_y=False)
-    fig.update_yaxes(fixedrange=True, tickformat=".2%", title_text="逾放比",
-                     gridcolor="rgba(0,0,0,0.07)", tickfont=dict(size=12), secondary_y=True)
+    fig.update_xaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0)",
+        showline=True,
+        linecolor="rgba(0,0,0,0.12)",
+        tickfont=dict(size=12),
+        tickangle=-30,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        tickformat=".2s",
+        title_text="逾期貸款（元）",
+        gridcolor="rgba(0,0,0,0.07)",
+        tickfont=dict(size=12),
+        secondary_y=False,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        tickformat=".2%",
+        title_text="逾放比",
+        gridcolor="rgba(0,0,0,0.07)",
+        tickfont=dict(size=12),
+        secondary_y=True,
+    )
     return to_html_div(fig)
 
 
@@ -379,38 +621,45 @@ def chart_waterfall(d):
 
     def grp(pfx):
         return yr_df[yr_df["會計科目"].str.startswith(pfx)]["當月金額"].sum()
+
     exp_groups = {}
-    if grp("51") > 0: exp_groups["利息支出"] = grp("51")
-    if grp("52") > 0: exp_groups["人事費用"] = grp("52")
-    if grp("53") > 0: exp_groups["業務費用"] = grp("53")
-    if grp("54") > 0: exp_groups["管理費用"] = grp("54")
-    if grp("55") > 0: exp_groups["呆帳費用"] = grp("55")
-    if grp("56") > 0: exp_groups["協會及捐贈費"] = grp("56")
-    if grp("57") > 0: exp_groups["教育社務費"] = grp("57")
-    if grp("58") > 0: exp_groups["獎勵費"] = grp("58")
+    if grp("51") > 0:
+        exp_groups["利息支出"] = grp("51")
+    if grp("52") > 0:
+        exp_groups["人事費用"] = grp("52")
+    if grp("53") > 0:
+        exp_groups["業務費用"] = grp("53")
+    if grp("54") > 0:
+        exp_groups["管理費用"] = grp("54")
+    if grp("55") > 0:
+        exp_groups["呆帳費用"] = grp("55")
+    if grp("56") > 0:
+        exp_groups["協會及捐贈費"] = grp("56")
+    if grp("57") > 0:
+        exp_groups["教育社務費"] = grp("57")
+    if grp("58") > 0:
+        exp_groups["獎勵費"] = grp("58")
     net = revenue - expense
 
     labels = ["總收入"] + list(exp_groups.keys()) + ["本期損益"]
     values = [revenue] + [-v for v in exp_groups.values()] + [net]
     measures = ["absolute"] + ["relative"] * len(exp_groups) + ["total"]
-    colors = (
-        [C["green"]]
-        + [C["red"]] * len(exp_groups)
-        + [C["green"] if net >= 0 else C["red"]]
+    fig = go.Figure(
+        go.Waterfall(
+            name="",
+            orientation="v",
+            measure=measures,
+            x=labels,
+            y=values,
+            connector=dict(line=dict(color="rgba(0,0,0,0.25)", width=1.5, dash="dot")),
+            increasing=dict(marker=dict(color=C["green"], line=dict(width=0))),
+            decreasing=dict(marker=dict(color=C["red"], line=dict(width=0))),
+            totals=dict(marker=dict(color=C["blue"], line=dict(width=0))),
+            text=[fmt(abs(v)) for v in values],
+            textposition="outside",
+            textfont=dict(size=12, color=C["text"]),
+        )
     )
-
-    fig = go.Figure(go.Waterfall(
-        name="", orientation="v",
-        measure=measures,
-        x=labels, y=values,
-        connector=dict(line=dict(color="rgba(0,0,0,0.25)", width=1.5, dash="dot")),
-        increasing=dict(marker=dict(color=C["green"], line=dict(width=0))),
-        decreasing=dict(marker=dict(color=C["red"],   line=dict(width=0))),
-        totals=dict(marker=dict(color=C["blue"],       line=dict(width=0))),
-        text=[fmt(abs(v)) for v in values],
-        textposition="outside",
-        textfont=dict(size=12, color=C["text"]),
-    ))
     style_fig(fig, height=500)
     fig.update_layout(showlegend=False)
     fig.update_xaxes(tickangle=0)
@@ -425,9 +674,13 @@ def chart_annual_trend(d):
     df["年度"] = df["年月"].dt.year
     agg = df.groupby(["年度", "會計科目"]).agg({"當月金額": "sum"}).reset_index()
 
-    rev_by_yr = agg[agg["會計科目"].str.startswith("4")].groupby("年度")["當月金額"].sum().reset_index()
+    rev_by_yr = (
+        agg[agg["會計科目"].str.startswith("4")].groupby("年度")["當月金額"].sum().reset_index()
+    )
     rev_by_yr.columns = ["年度", "收入"]
-    exp_by_yr = agg[agg["會計科目"].str.startswith("5")].groupby("年度")["當月金額"].sum().reset_index()
+    exp_by_yr = (
+        agg[agg["會計科目"].str.startswith("5")].groupby("年度")["當月金額"].sum().reset_index()
+    )
     exp_by_yr.columns = ["年度", "支出"]
 
     merged = rev_by_yr.merge(exp_by_yr, on="年度", how="outer").fillna(0)
@@ -435,38 +688,91 @@ def chart_annual_trend(d):
     merged["開支比"] = merged.apply(lambda r: safe_div(r["支出"], r["收入"]), axis=1)
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Bar(x=merged["年度"], y=merged["收入"], name="收入",
-                         marker_color=C["green"], opacity=0.88,
-                         marker_line=dict(width=0)), secondary_y=False)
-    fig.add_trace(go.Bar(x=merged["年度"], y=merged["支出"], name="支出",
-                         marker_color=C["red"], opacity=0.88,
-                         marker_line=dict(width=0)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=merged["年度"], y=merged["開支比"],
-                             name="開支比", mode="lines+markers",
-                             line=dict(color=C["blue"], width=2.5),
-                             marker=dict(size=9, line=dict(width=2, color="white"))),
-                  secondary_y=True)
-    fig.add_hline(y=1.0, line_dash="dash", line_color=C["red"],
-                  opacity=0.6, annotation_text="損益平衡",
-                  annotation_font=dict(size=11, color=C["red"]),
-                  secondary_y=True)
+    fig.add_trace(
+        go.Bar(
+            x=merged["年度"],
+            y=merged["收入"],
+            name="收入",
+            marker_color=C["green"],
+            opacity=0.88,
+            marker_line=dict(width=0),
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Bar(
+            x=merged["年度"],
+            y=merged["支出"],
+            name="支出",
+            marker_color=C["red"],
+            opacity=0.88,
+            marker_line=dict(width=0),
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=merged["年度"],
+            y=merged["開支比"],
+            name="開支比",
+            mode="lines+markers",
+            line=dict(color=C["blue"], width=2.5),
+            marker=dict(size=9, line=dict(width=2, color="white")),
+        ),
+        secondary_y=True,
+    )
+    fig.add_hline(
+        y=1.0,
+        line_dash="dash",
+        line_color=C["red"],
+        opacity=0.6,
+        annotation_text="損益平衡",
+        annotation_font=dict(size=11, color=C["red"]),
+        secondary_y=True,
+    )
     fig.update_layout(
         title=None,
-        barmode="group", plot_bgcolor="#FFFFFF", paper_bgcolor=THEME_BG,
-        font=dict(size=13, color=C["text"]), margin=dict(l=55, r=25, t=20, b=55),
-        height=400, dragmode=False, hovermode="x unified",
+        barmode="group",
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor=THEME_BG,
+        font=dict(size=13, color=C["text"]),
+        margin=dict(l=55, r=25, t=20, b=55),
+        height=400,
+        dragmode=False,
+        hovermode="x unified",
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5,
-            bgcolor="rgba(255,255,255,0.85)", bordercolor="rgba(0,0,0,0.1)", borderwidth=1,
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="rgba(0,0,0,0.1)",
+            borderwidth=1,
         ),
     )
-    fig.update_xaxes(fixedrange=True, gridcolor="rgba(0,0,0,0)", type="category",
-                     showline=True, linecolor="rgba(0,0,0,0.12)",
-                     tickfont=dict(size=12))
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".2s",
-                     tickfont=dict(size=12), secondary_y=False)
-    fig.update_yaxes(fixedrange=True, gridcolor="rgba(0,0,0,0.07)", tickformat=".1%",
-                     tickfont=dict(size=12), secondary_y=True)
+    fig.update_xaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0)",
+        type="category",
+        showline=True,
+        linecolor="rgba(0,0,0,0.12)",
+        tickfont=dict(size=12),
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.07)",
+        tickformat=".2s",
+        tickfont=dict(size=12),
+        secondary_y=False,
+    )
+    fig.update_yaxes(
+        fixedrange=True,
+        gridcolor="rgba(0,0,0,0.07)",
+        tickformat=".1%",
+        tickfont=dict(size=12),
+        secondary_y=True,
+    )
     return to_html_div(fig)
 
 
@@ -481,9 +787,12 @@ def make_balance_sheet_html(d):
     def accs(*pfxs):
         rows = []
         for p in pfxs:
-            g = (yr_df[yr_df["會計科目"].str.startswith(p)]
-                 .groupby(["會計科目", "會科名稱"])["當月金額"].sum()
-                 .reset_index())
+            g = (
+                yr_df[yr_df["會計科目"].str.startswith(p)]
+                .groupby(["會計科目", "會科名稱"])["當月金額"]
+                .sum()
+                .reset_index()
+            )
             g = g[g["當月金額"].abs() > 0].sort_values("會計科目")
             rows.extend(g.to_dict("records"))
         return rows
@@ -496,30 +805,38 @@ def make_balance_sheet_html(d):
         fw = "font-weight:700;" if bold else ""
         bgcss = f"background:{bg};" if bg else ""
         color = "#EF4444" if amt < 0 else "#1E293B"
-        return (f'<tr style="{bgcss}">'
-                f'<td style="{pad}{fw}font-size:0.92rem;color:#475569">{name}</td>'
-                f'<td style="text-align:right;{fw}font-size:0.92rem;color:{color}">{fmt(amt)}</td>'
-                f'</tr>')
+        return (
+            f'<tr style="{bgcss}">'
+            f'<td style="{pad}{fw}font-size:0.92rem;color:#475569">{name}</td>'
+            f'<td style="text-align:right;{fw}font-size:0.92rem;color:{color}">{fmt(amt)}</td>'
+            f"</tr>"
+        )
 
     def hdr(title):
-        return (f'<tr style="background:#E2E8F0">'
-                f'<td colspan="2" style="font-weight:700;font-size:0.95rem;'
-                f'color:#1E293B;padding:8px 12px;letter-spacing:0.02em">{title}</td>'
-                f'</tr>')
+        return (
+            f'<tr style="background:#E2E8F0">'
+            f'<td colspan="2" style="font-weight:700;font-size:0.95rem;'
+            f'color:#1E293B;padding:8px 12px;letter-spacing:0.02em">{title}</td>'
+            f"</tr>"
+        )
 
     def sub_row(label, total):
         clr = "#10B981" if total >= 0 else "#EF4444"
-        return (f'<tr style="background:#F8FAFC;border-top:1.5px solid #CBD5E1">'
-                f'<td style="font-weight:600;font-size:0.92rem;padding-left:0.8rem">{label}</td>'
-                f'<td style="text-align:right;font-weight:700;color:{clr};font-size:0.92rem">{fmt(total)}</td>'
-                f'</tr>')
+        return (
+            f'<tr style="background:#F8FAFC;border-top:1.5px solid #CBD5E1">'
+            f'<td style="font-weight:600;font-size:0.92rem;padding-left:0.8rem">{label}</td>'
+            f'<td style="text-align:right;font-weight:700;color:{clr};font-size:0.92rem">{fmt(total)}</td>'
+            f"</tr>"
+        )
 
     def total_row(label, total):
         clr = "#10B981" if total >= 0 else "#EF4444"
-        return (f'<tr style="background:#1E293B">'
-                f'<td style="color:#fff;font-weight:700;font-size:1rem">{label}</td>'
-                f'<td style="text-align:right;font-weight:700;color:{clr};font-size:1rem">{fmt(total)}</td>'
-                f'</tr>')
+        return (
+            f'<tr style="background:#1E293B">'
+            f'<td style="color:#fff;font-weight:700;font-size:1rem">{label}</td>'
+            f'<td style="text-align:right;font-weight:700;color:{clr};font-size:1rem">{fmt(total)}</td>'
+            f"</tr>"
+        )
 
     cash = accs("11")
     invest = accs("12")
@@ -540,68 +857,69 @@ def make_balance_sheet_html(d):
     total_eq = sub(cap) + sub(resv) + sub(earn)
 
     asset_body = (
-        hdr("現金、存款及應收款") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in cash) +
-        sub_row("現金、存款及應收款 小計", sub(cash)) +
-        hdr("預付費用") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in invest) +
-        sub_row("預付費用 小計", sub(invest)) +
-        hdr("放款") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in loans) +
-        sub_row("放款 小計", sub(loans)) +
-        hdr("存出保證金") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in guar) +
-        sub_row("存出保證金 小計", sub(guar)) +
-        hdr("固定資產") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in fixed) +
-        sub_row("固定資產 小計", sub(fixed)) +
-        total_row("資產合計", total_assets)
+        hdr("現金、存款及應收款")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in cash)
+        + sub_row("現金、存款及應收款 小計", sub(cash))
+        + hdr("預付費用")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in invest)
+        + sub_row("預付費用 小計", sub(invest))
+        + hdr("放款")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in loans)
+        + sub_row("放款 小計", sub(loans))
+        + hdr("存出保證金")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in guar)
+        + sub_row("存出保證金 小計", sub(guar))
+        + hdr("固定資產")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in fixed)
+        + sub_row("固定資產 小計", sub(fixed))
+        + total_row("資產合計", total_assets)
     )
 
     le_body = (
-        hdr("【負債】應付費用") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in payab) +
-        sub_row("應付費用 小計", sub(payab)) +
-        hdr("【負債】吸收存款") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in dep) +
-        sub_row("吸收存款 小計", sub(dep)) +
-        hdr("【負債】遞延收入") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in borrow) +
-        sub_row("遞延收入 小計", sub(borrow)) +
-        hdr("【負債】其他負債") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in othl) +
-        sub_row("其他負債 小計", sub(othl)) +
-        total_row("負債合計", total_liab) +
-        hdr("【權益】股金") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in cap) +
-        sub_row("股金 小計", sub(cap)) +
-        hdr("【權益】捐贈及補助公積") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in resv) +
-        sub_row("捐贈及補助公積 小計", sub(resv)) +
-        hdr("【權益】公積金及盈餘") +
-        "".join(row_html(r["會科名稱"], r["當月金額"]) for r in earn) +
-        sub_row("公積金及盈餘 小計", sub(earn)) +
-        total_row("權益合計", total_eq) +
-        total_row("負債及權益合計", total_liab + total_eq)
+        hdr("【負債】應付費用")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in payab)
+        + sub_row("應付費用 小計", sub(payab))
+        + hdr("【負債】吸收存款")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in dep)
+        + sub_row("吸收存款 小計", sub(dep))
+        + hdr("【負債】遞延收入")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in borrow)
+        + sub_row("遞延收入 小計", sub(borrow))
+        + hdr("【負債】其他負債")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in othl)
+        + sub_row("其他負債 小計", sub(othl))
+        + total_row("負債合計", total_liab)
+        + hdr("【權益】股金")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in cap)
+        + sub_row("股金 小計", sub(cap))
+        + hdr("【權益】捐贈及補助公積")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in resv)
+        + sub_row("捐贈及補助公積 小計", sub(resv))
+        + hdr("【權益】公積金及盈餘")
+        + "".join(row_html(r["會科名稱"], r["當月金額"]) for r in earn)
+        + sub_row("公積金及盈餘 小計", sub(earn))
+        + total_row("權益合計", total_eq)
+        + total_row("負債及權益合計", total_liab + total_eq)
     )
 
     tbl_style = "width:100%;border-collapse:collapse;font-size:0.92rem;"
-    th_style = ("background:#1E293B;color:#fff;padding:10px 12px;"
-                "font-size:1rem;font-weight:700;text-align:left;")
+    th_style = (
+        "background:#1E293B;color:#fff;padding:10px 12px;"
+        "font-size:1rem;font-weight:700;text-align:left;"
+    )
 
     bal_ok = abs(total_assets - (total_liab + total_eq)) < 1
     bal_icon = "✅" if bal_ok else "⚠️"
     bal_color = "#10B981" if bal_ok else "#EF4444"
-    bal_msg = (
-        f"資產 {fmt(total_assets)} ＝ 負債 {fmt(total_liab)} + 權益 {fmt(total_eq)}"
-    )
+    bal_msg = f"資產 {fmt(total_assets)} ＝ 負債 {fmt(total_liab)} + 權益 {fmt(total_eq)}"
 
     return f"""
 <div style="text-align:center;font-size:1.15rem;font-weight:700;
             color:#1E293B;padding:0.6rem 0 1rem;letter-spacing:0.03em">
   {latest_yr} 年度　資產負債表
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;overflow-x:auto">
+<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;min-width:560px">
   <table style="{tbl_style}">
     <thead><tr><th style="{th_style}">科目</th><th style="{th_style}text-align:right">金額</th></tr></thead>
     <tbody>{asset_body}</tbody>
@@ -610,6 +928,7 @@ def make_balance_sheet_html(d):
     <thead><tr><th style="{th_style}">科目</th><th style="{th_style}text-align:right">金額</th></tr></thead>
     <tbody>{le_body}</tbody>
   </table>
+</div>
 </div>
 <div style="text-align:center;padding:0.8rem 0 0.2rem;font-size:0.95rem;color:{bal_color};font-weight:600">
   {bal_icon} {bal_msg}
@@ -624,8 +943,20 @@ def chart_lending_rate(d):
     df = d["df_csv"].copy()
     df["年"] = df["年月"].dt.year
 
-    int_inc  = df[df["會計科目"].str.startswith("410")].groupby("年")["當月金額"].sum()
-    loan_bal = df[df["會計科目"].str.startswith("131")].groupby("年")["當月金額"].mean()
+    int_inc = (
+        df[df["會計科目"].str.startswith("410")]
+        .groupby(["年", "年月"])["當月金額"]
+        .sum()
+        .groupby(level=0)
+        .sum()
+    )
+    loan_bal = (
+        df[df["會計科目"].str.startswith("131")]
+        .groupby(["年", "年月"])["當月金額"]
+        .sum()
+        .groupby(level=0)
+        .mean()
+    )
     rate = (int_inc / loan_bal * 100).dropna()
 
     cur_yr = int(df["年月"].dt.year.max())
@@ -637,20 +968,23 @@ def chart_lending_rate(d):
 
     rate = rate.sort_index()
     years = [str(yr) for yr in rate.index]
-    vals  = rate.values.tolist()
+    vals = rate.values.tolist()
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=years, y=vals,
-        mode="lines+markers+text",
-        line=dict(color=C["blue"], width=3),
-        marker=dict(size=13, color=C["blue"], line=dict(width=2.5, color="white")),
-        text=[f"{v:.2f}%" for v in vals],
-        textposition="top center",
-        textfont=dict(size=13, color=C["text"]),
-        hovertemplate="%{x} 年<br>年化放款利率：%{y:.2f}%<extra></extra>",
-        name="年化放款利率",
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=years,
+            y=vals,
+            mode="lines+markers+text",
+            line=dict(color=C["blue"], width=3),
+            marker=dict(size=13, color=C["blue"], line=dict(width=2.5, color="white")),
+            text=[f"{v:.2f}%" for v in vals],
+            textposition="top center",
+            textfont=dict(size=13, color=C["text"]),
+            hovertemplate="%{x} 年<br>年化放款利率：%{y:.2f}%<extra></extra>",
+            name="年化放款利率",
+        )
+    )
 
     style_fig(fig, height=320)
     fig.update_xaxes(type="category", tickangle=0)

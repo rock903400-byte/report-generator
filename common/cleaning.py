@@ -16,7 +16,7 @@ def normalize_html_percentage(val, col_name):
         if col_name in PERCENTAGE_FIELDS:
             return round(raw_f / 100, 6)
         return int(raw_f)
-    except:
+    except Exception:
         return s
 
 
@@ -26,7 +26,7 @@ def defensive_clean_value(val, col_name):
     try:
         if pd.isna(val):
             return val
-    except:
+    except Exception:
         pass
     if col_name in ("逾放比", "提撥率"):
         return val
@@ -36,7 +36,7 @@ def defensive_clean_value(val, col_name):
             return f_val / 100 if abs(f_val) > 1.0 else f_val
         if col_name in ("收支比", "開支比"):
             return f_val / 100 if abs(f_val) > 5.0 else f_val
-    except:
+    except Exception:
         pass
     return val
 

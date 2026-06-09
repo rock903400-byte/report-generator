@@ -1,7 +1,6 @@
 """Browser rendering test: verify Plotly charts render in real browser."""
 
 import pytest
-import pandas as pd
 from playwright.sync_api import sync_playwright
 
 from report_data import load_data_from_bytes, extract_union_data
@@ -12,6 +11,7 @@ from report_html import build_report
 def _count_divs(html, class_name=None):
     """Count plotly-graph-div occurrences in HTML string."""
     import re
+
     pattern = r'class="plotly-graph-div"'
     return len(re.findall(pattern, html))
 

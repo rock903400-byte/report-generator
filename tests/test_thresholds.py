@@ -4,10 +4,17 @@ from common.thresholds import load_thresholds, DEFAULT_THRESHOLDS
 class TestDefaultThresholds:
     def test_has_all_keys(self):
         expected_keys = {
-            "high_risk_ovd", "liquidity_loan", "idle_loan",
-            "stable_loan_min", "stable_loan_max", "ovd_safe_line",
-            "high_risk_income_ratio", "high_risk_loan_ratio",
-            "high_risk_ovd_ratio", "savings_good", "provision_good",
+            "high_risk_ovd",
+            "liquidity_loan",
+            "idle_loan",
+            "stable_loan_min",
+            "stable_loan_max",
+            "ovd_safe_line",
+            "high_risk_income_ratio",
+            "high_risk_loan_ratio",
+            "high_risk_ovd_ratio",
+            "savings_good",
+            "provision_good",
         }
         assert set(DEFAULT_THRESHOLDS.keys()) == expected_keys
 

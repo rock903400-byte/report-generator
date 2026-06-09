@@ -45,9 +45,12 @@ python -m pytest tests/test_classifier.py::TestClassifySpecialCare -v  # 單類
 - Plotly chart tests (`test_charts.py`) check HTML structure, not Chinese text (Plotly escapes Unicode in JSON)
 - Playwright tests (`test_html_playwright.py`) need `playwright install chromium` before first run
 
-## 32 社
+## 105 社
 
 - 雲林 13 社（3201–3214 缺 3209）、嘉義 19 社（3301,3305,3307, 3401–3417 缺 3405）
+- 台中 19 社（2201–2214 缺 2203/2206，2301–2315 缺 2304/2307–2313）
+- 南投 34 社（2401–2440 缺 2404/2418/2425/2428/2431/2435）
+- 彰化 20 社（3101–3127 缺 3105/3113/3114/3117/3120/3125/3126）
 - 合併鍵用**社號**（非社名，防更名）；對照表在 `report_config.py:REGIONS`
 
 ## Data Cleaning

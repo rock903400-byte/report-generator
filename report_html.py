@@ -1,6 +1,7 @@
 """
 HTML 模板組裝（使用 Jinja2 模板引擎）
 """
+
 import re
 from html import escape as html_escape
 from datetime import date
@@ -111,6 +112,7 @@ def _is_ai_truncated(text):
         return True
     return False
 
+
 PLOTLY_JS_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
 
 _env = Environment(loader=FileSystemLoader("templates"))
@@ -137,10 +139,9 @@ def build_kpi_yoy_table(d):
     m_ye = df_m[df_m["年月"].dt.month == 12].copy()
     l_ye = df_l[df_l["年月"].dt.month == 12].copy()
 
-    all_years = sorted(set(
-        list(m_ye["年月"].dt.year.unique()) +
-        list(l_ye["年月"].dt.year.unique())
-    ))
+    all_years = sorted(
+        set(list(m_ye["年月"].dt.year.unique()) + list(l_ye["年月"].dt.year.unique()))
+    )
     if len(all_years) < 2:
         return "<p style='color:#94A3B8;padding:1rem'>年度資料不足（需至少 2 年）</p>"
 
@@ -157,8 +158,20 @@ def build_kpi_yoy_table(d):
     if d.get("has_csv") and not d["df_csv"].empty:
         dfc = d["df_csv"].copy()
         dfc["年"] = dfc["年月"].dt.year
-        ii = dfc[dfc["會計科目"].str.startswith("410")].groupby("年")["當月金額"].sum()
-        lb = dfc[dfc["會計科目"].str.startswith("131")].groupby("年")["當月金額"].mean()
+        ii = (
+            dfc[dfc["會計科目"].str.startswith("410")]
+            .groupby(["年", "年月"])["當月金額"]
+            .sum()
+            .groupby(level=0)
+            .sum()
+        )
+        lb = (
+            dfc[dfc["會計科目"].str.startswith("131")]
+            .groupby(["年", "年月"])["當月金額"]
+            .sum()
+            .groupby(level=0)
+            .mean()
+        )
         rs = (ii / lb * 100).dropna()
         cur_yr = int(dfc["年月"].dt.year.max())
         if dfc[dfc["年"] == cur_yr]["年月"].dt.month.nunique() < 10:
@@ -174,7 +187,11 @@ def build_kpi_yoy_table(d):
             return "0.0%（無逾期）"
         if prov_v == 0 and ovd_v is not None and ovd_v > 0:
             r = l_ye[l_ye["年月"].dt.year == yr]
-            is_missing = bool(r.iloc[-1]["提撥率_缺失"]) if not r.empty and "提撥率_缺失" in r.columns else True
+            is_missing = (
+                bool(r.iloc[-1]["提撥率_缺失"])
+                if not r.empty and "提撥率_缺失" in r.columns
+                else True
+            )
             if is_missing:
                 return "—（資料缺失）"
         return fmt_pct(prov_v)
@@ -182,16 +199,17 @@ def build_kpi_yoy_table(d):
     prov_vals = {yr: _fmt_prov(yr) for yr in all_years}
 
     rows_def = [
-        ("社員數",  {yr: _mval(yr, "社員數") for yr in all_years}, lambda v: f"{int(v):,}人",  "up"),
-        ("股金",    {yr: _mval(yr, "股金")   for yr in all_years}, fmt,                         "up"),
-        ("貸放比",  {yr: _mval(yr, "貸放比") for yr in all_years}, fmt_pct,                     "range"),
-        ("逾放比",  {yr: _lval(yr, "逾放比") for yr in all_years}, fmt_pct,                     "down"),
-        ("開支比",  {yr: _lval(yr, "開支比") for yr in all_years}, fmt_pct,                     "down"),
-        ("提撥率",  prov_vals, lambda v: v if isinstance(v, str) else fmt_pct(v),               "up"),
+        ("社員數", {yr: _mval(yr, "社員數") for yr in all_years}, lambda v: f"{int(v):,}人", "up"),
+        ("股金", {yr: _mval(yr, "股金") for yr in all_years}, fmt, "up"),
+        ("貸放比", {yr: _mval(yr, "貸放比") for yr in all_years}, fmt_pct, "range"),
+        ("逾放比", {yr: _lval(yr, "逾放比") for yr in all_years}, fmt_pct, "down"),
+        ("開支比", {yr: _lval(yr, "開支比") for yr in all_years}, fmt_pct, "down"),
+        ("提撥率", prov_vals, lambda v: v if isinstance(v, str) else fmt_pct(v), "up"),
     ]
     if lr:
-        rows_def.append(("放款利率*", {yr: lr.get(yr) for yr in all_years},
-                         lambda v: f"{v:.2f}%", "neutral"))
+        rows_def.append(
+            ("放款利率*", {yr: lr.get(yr) for yr in all_years}, lambda v: f"{v:.2f}%", "neutral")
+        )
 
     def _bg(direction, curr, prev):
         if curr is None or prev is None:
@@ -221,16 +239,30 @@ def build_kpi_yoy_table(d):
             v = vals.get(yr)
             txt = fmt_fn(v) if v is not None else "—"
             bg = _bg(direction, v, vals.get(all_years[i - 1])) if i > 0 else ""
-            st = f' style="background:{bg};text-align:center"' if bg else ' style="text-align:center"'
+            st = (
+                f' style="background:{bg};text-align:center"'
+                if bg
+                else ' style="text-align:center"'
+            )
             tds.append(f"<td{st}>{txt}</td>")
-        body += f'<tr><th style="text-align:left;white-space:nowrap">{label}</th>{"".join(tds)}</tr>\n'
+        body += (
+            f'<tr><th style="text-align:left;white-space:nowrap">{label}</th>{"".join(tds)}</tr>\n'
+        )
 
-    note = ('<p style="font-size:0.8rem;color:#94A3B8;padding:0.5rem 1rem">'
-            '* 放款利率＝年度利息收入 / 平均放款餘額，月份不足 10 個月之年度不計入</p>') if lr else ""
+    note = (
+        (
+            '<p style="font-size:0.8rem;color:#94A3B8;padding:0.5rem 1rem">'
+            "* 放款利率＝年度利息收入 / 平均放款餘額，月份不足 10 個月之年度不計入</p>"
+        )
+        if lr
+        else ""
+    )
 
-    return (f'<table class="data-table" style="width:100%">'
-            f'<thead><tr><th style="text-align:left">指標</th>{th}</tr></thead>'
-            f'<tbody>{body}</tbody></table>{note}')
+    return (
+        f'<table class="data-table" style="width:100%">'
+        f'<thead><tr><th style="text-align:left">指標</th>{th}</tr></thead>'
+        f"<tbody>{body}</tbody></table>{note}"
+    )
 
 
 def build_report(d, charts, ai_analysis=None):
@@ -250,7 +282,7 @@ def build_report(d, charts, ai_analysis=None):
     T1 = d["T1"]
     _m1 = df_m_data[df_m_data["年月"] <= T1].sort_values("年月")
     loan_prev = float(_m1["貸放比"].iloc[-1]) if not _m1.empty else None
-    rate_prev = float(_m1["儲蓄率"].iloc[-1]) if not _m1.empty else None
+
 
     if loan_prev is not None:
         _ld = d["eLoan"] - loan_prev
@@ -280,30 +312,50 @@ def build_report(d, charts, ai_analysis=None):
     # ── KPI 卡片（風險觸發數排第一） ──
     rc = d.get("risk_count", 0)
     kpi_cards = [
-        {"label": "風險觸發數", "value": f"{rc} / 5 條件",
-         "sub": d["status"],
-         "good": rc == 0, "custom_color": d["status_color"]},
-        {"label": "現有社員", "value": f"{int(d['curr_M']):,} 人",
-         "sub": f"12M {'↑' if d['memG_curr'] >= 0 else '↓'} {abs(int(d['curr_M'] - d['M0'])):,} 人 ({fmt_pct(d['memG_curr'])})",
-         "good": d["memG_curr"] >= 0},
-        {"label": "現有股金", "value": fmt(d["curr_S"]),
-         "sub": f"12M {'↑' if d['shrG_curr'] >= 0 else '↓'} {fmt(abs(d['curr_S'] - d['S0']))} ({fmt_pct(d['shrG_curr'])})",
-         "good": d["shrG_curr"] >= 0},
-        {"label": "貸放比",  "value": fmt_pct(d["eLoan"]),
-         "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%){loan_yoy}",
-         "good": 0.4 <= d["eLoan"] <= 0.8},
-        {"label": "儲蓄率",  "value": fmt_pct(d["eRate"]),
-         "sub": f"門檻 {sav_thr * 100:.0f}%，{'達標 ✓' if sav_ok else '未達標 ✗'}",
-         "good": sav_ok},
-        {"label": "逾放比",  "value": fmt_pct(d["eOvd"]),
-         "sub": f"{'⚠ 警戒' if d['eOvd'] > 0.02 else '✓ 正常'} (警戒值 2%)",
-         "good": d["eOvd"] <= 0.02},
-        {"label": "開支比(年)", "value": fmt_pct(d["R0"]),
-         "sub": f"{'⚠ 虧損' if d['R0'] > 1.0 else '✓ 盈餘'} (損益平衡 100%)",
-         "good": d["R0"] <= 1.0},
-        {"label": "提撥率",  "value": prov_value,
-         "sub": prov_sub,
-         "good": prov_good},
+        {
+            "label": "風險觸發數",
+            "value": f"{rc} / 5 條件",
+            "sub": d["status"],
+            "good": rc == 0,
+            "custom_color": d["status_color"],
+        },
+        {
+            "label": "現有社員",
+            "value": f"{int(d['curr_M']):,} 人",
+            "sub": f"12M {'↑' if d['memG_curr'] >= 0 else '↓'} {abs(int(d['curr_M'] - d['M0'])):,} 人 ({fmt_pct(d['memG_curr'])})",
+            "good": d["memG_curr"] >= 0,
+        },
+        {
+            "label": "現有股金",
+            "value": fmt(d["curr_S"]),
+            "sub": f"12M {'↑' if d['shrG_curr'] >= 0 else '↓'} {fmt(abs(d['curr_S'] - d['S0']))} ({fmt_pct(d['shrG_curr'])})",
+            "good": d["shrG_curr"] >= 0,
+        },
+        {
+            "label": "貸放比",
+            "value": fmt_pct(d["eLoan"]),
+            "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%){loan_yoy}",
+            "good": 0.4 <= d["eLoan"] <= 0.8,
+        },
+        {
+            "label": "儲蓄率",
+            "value": fmt_pct(d["eRate"]),
+            "sub": f"門檻 {sav_thr * 100:.0f}%，{'達標 ✓' if sav_ok else '未達標 ✗'}",
+            "good": sav_ok,
+        },
+        {
+            "label": "逾放比",
+            "value": fmt_pct(d["eOvd"]),
+            "sub": f"{'⚠ 警戒' if d['eOvd'] > 0.02 else '✓ 正常'} (警戒值 2%)",
+            "good": d["eOvd"] <= 0.02,
+        },
+        {
+            "label": "開支比(年)",
+            "value": fmt_pct(d["R0"]),
+            "sub": f"{'⚠ 虧損' if d['R0'] > 1.0 else '✓ 盈餘'} (損益平衡 100%)",
+            "good": d["R0"] <= 1.0,
+        },
+        {"label": "提撥率", "value": prov_value, "sub": prov_sub, "good": prov_good},
     ]
 
     def kpi_card_html(card):
@@ -319,20 +371,43 @@ def build_report(d, charts, ai_analysis=None):
     # 逾放比統計摘要卡片
     ovd = compute_ovd_stats(d)
     ovd_stat_cards = [
-        {"label": "最新逾放比",  "value": fmt_pct(ovd["curr"]),
-         "sub": "最新一期數值", "good": ovd["curr"] <= THRESHOLDS["ovd_safe_line"]},
-        {"label": "近 12M 平均", "value": fmt_pct(ovd["avg12"]),
-         "sub": "過去 12 期平均", "good": ovd["avg12"] <= THRESHOLDS["ovd_safe_line"]},
-        {"label": "歷史最高",    "value": fmt_pct(ovd["hist_max"]),
-         "sub": f"發生於 {ovd['hist_max_d']}", "good": False},
-        {"label": "歷史最低",    "value": fmt_pct(ovd["hist_min"]),
-         "sub": f"發生於 {ovd['hist_min_d']}", "good": True},
-        {"label": "超標月數",
-         "value": f"{ovd['months_warn']} / {ovd['months_total']} M",
-         "sub": "超過 2% 警戒線的月份數", "good": ovd["months_warn"] == 0},
-        {"label": "近 6M 走勢",  "value": ovd["trend"],
-         "sub": "以近 6M 首末值判定", "good": ovd["trend"] == "持續改善",
-         "custom_color": ovd["trend_color"]},
+        {
+            "label": "最新逾放比",
+            "value": fmt_pct(ovd["curr"]),
+            "sub": "最新一期數值",
+            "good": ovd["curr"] <= THRESHOLDS["ovd_safe_line"],
+        },
+        {
+            "label": "近 12M 平均",
+            "value": fmt_pct(ovd["avg12"]),
+            "sub": "過去 12 期平均",
+            "good": ovd["avg12"] <= THRESHOLDS["ovd_safe_line"],
+        },
+        {
+            "label": "歷史最高",
+            "value": fmt_pct(ovd["hist_max"]),
+            "sub": f"發生於 {ovd['hist_max_d']}",
+            "good": False,
+        },
+        {
+            "label": "歷史最低",
+            "value": fmt_pct(ovd["hist_min"]),
+            "sub": f"發生於 {ovd['hist_min_d']}",
+            "good": True,
+        },
+        {
+            "label": "超標月數",
+            "value": f"{ovd['months_warn']} / {ovd['months_total']} M",
+            "sub": "超過 2% 警戒線的月份數",
+            "good": ovd["months_warn"] == 0,
+        },
+        {
+            "label": "近 6M 走勢",
+            "value": ovd["trend"],
+            "sub": "以近 6M 首末值判定",
+            "good": ovd["trend"] == "持續改善",
+            "custom_color": ovd["trend_color"],
+        },
     ]
 
     def ovd_stat_card_html(card):

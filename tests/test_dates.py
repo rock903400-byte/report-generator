@@ -46,38 +46,48 @@ class TestConvertMinguoDate:
 
 class TestGetValue:
     def test_normal_case(self):
-        df = pd.DataFrame({
-            "年月": pd.to_datetime(["2026-02-01", "2026-03-01", "2026-04-01"]),
-            "社員數": [220, 215, 210],
-        })
+        df = pd.DataFrame(
+            {
+                "年月": pd.to_datetime(["2026-02-01", "2026-03-01", "2026-04-01"]),
+                "社員數": [220, 215, 210],
+            }
+        )
         result = get_value(df, "社員數", pd.Timestamp("2026-03-15"))
         assert result == 215.0
 
     def test_exact_boundary(self):
-        df = pd.DataFrame({
-            "年月": pd.to_datetime(["2026-03-01", "2026-04-01"]),
-            "社員數": [215, 210],
-        })
+        df = pd.DataFrame(
+            {
+                "年月": pd.to_datetime(["2026-03-01", "2026-04-01"]),
+                "社員數": [215, 210],
+            }
+        )
         result = get_value(df, "社員數", pd.Timestamp("2026-03-01"))
         assert result == 215.0
 
     def test_before_all_dates(self):
-        df = pd.DataFrame({
-            "年月": pd.to_datetime(["2026-04-01", "2026-05-01"]),
-            "社員數": [210, 215],
-        })
+        df = pd.DataFrame(
+            {
+                "年月": pd.to_datetime(["2026-04-01", "2026-05-01"]),
+                "社員數": [210, 215],
+            }
+        )
         result = get_value(df, "社員數", pd.Timestamp("2026-01-01"))
         assert result == 210.0
 
     def test_after_all_dates(self):
-        df = pd.DataFrame({
-            "年月": pd.to_datetime(["2026-03-01", "2026-04-01"]),
-            "社員數": [215, 210],
-        })
+        df = pd.DataFrame(
+            {
+                "年月": pd.to_datetime(["2026-03-01", "2026-04-01"]),
+                "社員數": [215, 210],
+            }
+        )
         result = get_value(df, "社員數", pd.Timestamp("2026-06-01"))
         assert result == 210.0
 
     def test_empty_df(self):
-        df = pd.DataFrame({"年月": pd.Series(dtype="datetime64[ns]"), "社員數": pd.Series(dtype="float64")})
+        df = pd.DataFrame(
+            {"年月": pd.Series(dtype="datetime64[ns]"), "社員數": pd.Series(dtype="float64")}
+        )
         result = get_value(df, "社員數", pd.Timestamp("2026-04-01"))
         assert result == 0.0

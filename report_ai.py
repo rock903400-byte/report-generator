@@ -1,6 +1,7 @@
 """
 儲互社 AI 顧問分析（Gemini 串接）
 """
+
 from google import genai
 from google.genai import types
 from report_config import GEMINI_MODEL, fmt, fmt_pct

@@ -11,7 +11,7 @@ def convert_minguo_date(val):
         else:
             return pd.NaT
         return pd.to_datetime(f"{yr}-{mo:02d}-01")
-    except:
+    except Exception:
         return pd.NaT
 
 

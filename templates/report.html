@@ -390,7 +390,9 @@
   </div>
 
   <h2 class="section-title">📊 關鍵指標年度對比</h2>
-  <div class="data-table-wrap">{{ kpi_yoy_html | safe }}</div>
+  <div class="data-table-wrap">
+    <div class="scroll-area">{{ kpi_yoy_html | safe }}</div>
+  </div>
 
   <h2 class="section-title">👥 社員數 & 股金趨勢</h2>
   <div class="chart-full chart-box">{{ charts.member_capital_trend | safe }}</div>

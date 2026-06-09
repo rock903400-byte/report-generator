@@ -4,6 +4,7 @@ Streamlit Cloud 版：理事會報告產生器
 使用者上傳 Excel + CSV → 選擇儲互社 → 產出 HTML 報告 → 下載
 支援 Supabase 雲端分享連結（?xl=...&csv=... 參數自動載入）
 """
+
 import os
 import sys
 import uuid
@@ -19,11 +20,13 @@ from report_charts import generate_all_charts
 from report_html import build_report
 from report_ai import analyze_with_gemini
 
+
 # ── Supabase 工具 ──────────────────────────────────────────────
 @st.cache_resource
 def _init_supabase():
     try:
         from supabase import create_client
+
         sb = st.secrets.get("supabase", {})
         if sb.get("url") and sb.get("key"):
             return create_client(sb["url"], sb["key"])
@@ -31,16 +34,19 @@ def _init_supabase():
         pass
     return None
 
+
 @st.cache_data(show_spinner="📥 從雲端載入資料…")
 def _download_from_supabase(_client, bucket: str, fname: str) -> bytes:
     return _client.storage.from_(bucket).download(fname)
+
 
 @st.cache_data(show_spinner=False)
 def _load_cached(excel_bytes: bytes, csv_bytes: bytes | None):
     return load_data_from_bytes(excel_bytes, csv_bytes)
 
+
 # ── Secrets ────────────────────────────────────────────────────
-_BUCKET  = st.secrets.get("BUCKET_NAME", "excel-reports")
+_BUCKET = st.secrets.get("BUCKET_NAME", "excel-reports")
 _APP_URL = st.secrets.get("APP_URL", "")
 
 st.set_page_config(
@@ -68,11 +74,11 @@ if _expected_pw:
 st.title("📊 理事會財務分析報告產生器")
 
 # ── 雲端連結自動載入 ───────────────────────────────────────────
-_xl_param  = st.query_params.get("xl")
+_xl_param = st.query_params.get("xl")
 _csv_param = st.query_params.get("csv")
 _from_cloud = False
 excel_bytes = None
-csv_bytes   = None
+csv_bytes = None
 
 if _xl_param:
     _supabase = _init_supabase()
@@ -81,12 +87,14 @@ if _xl_param:
         st.stop()
     try:
         excel_bytes = _download_from_supabase(_supabase, _BUCKET, _xl_param)
-        csv_bytes   = _download_from_supabase(_supabase, _BUCKET, _csv_param) if _csv_param else None
+        csv_bytes = _download_from_supabase(_supabase, _BUCKET, _csv_param) if _csv_param else None
         df_m, df_l, df_csv = _load_cached(excel_bytes, csv_bytes)
         has_csv = csv_bytes is not None and not df_csv.empty
         _from_cloud = True
-        st.success(f"✅ 雲端資料已載入：{len(df_m)} 筆社務資料、{len(df_l)} 筆放款資料"
-                   + (f"、{len(df_csv)} 筆財務科目" if has_csv else ""))
+        st.success(
+            f"✅ 雲端資料已載入：{len(df_m)} 筆社務資料、{len(df_l)} 筆放款資料"
+            + (f"、{len(df_csv)} 筆財務科目" if has_csv else "")
+        )
     except Exception as e:
         st.error(f"雲端資料載入失敗：{e}")
         st.stop()
@@ -123,11 +131,13 @@ if not _from_cloud:
     with st.spinner("載入資料中…"):
         try:
             excel_bytes = xls_file.read()
-            csv_bytes   = csv_file.read() if csv_file is not None else None
+            csv_bytes = csv_file.read() if csv_file is not None else None
             df_m, df_l, df_csv = _load_cached(excel_bytes, csv_bytes)
             has_csv = csv_bytes is not None and not df_csv.empty
-            st.success(f"✅ 載入完成：{len(df_m)} 筆社務資料、{len(df_l)} 筆放款資料"
-                       + (f"、{len(df_csv)} 筆財務科目" if has_csv else ""))
+            st.success(
+                f"✅ 載入完成：{len(df_m)} 筆社務資料、{len(df_l)} 筆放款資料"
+                + (f"、{len(df_csv)} 筆財務科目" if has_csv else "")
+            )
         except Exception as e:
             st.error(f"載入失敗：{e}")
             st.stop()
@@ -142,14 +152,18 @@ if not _from_cloud:
                     try:
                         xl_name = f"report_xl_{uuid.uuid4().hex[:8]}.xlsx"
                         _supabase.storage.from_(_BUCKET).upload(
-                            xl_name, excel_bytes,
-                            file_options={"content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+                            xl_name,
+                            excel_bytes,
+                            file_options={
+                                "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            },
                         )
                         params = f"xl={xl_name}"
                         if csv_bytes:
                             csv_name = f"report_csv_{uuid.uuid4().hex[:8]}.csv"
                             _supabase.storage.from_(_BUCKET).upload(
-                                csv_name, csv_bytes,
+                                csv_name,
+                                csv_bytes,
                                 file_options={"content-type": "text/csv"},
                             )
                             params += f"&csv={csv_name}"
@@ -176,7 +190,8 @@ with col1:
     st.caption(f"📅 資料截至：{data_end_str}")
 
 ai_enabled = st.checkbox(
-    "🤖 啟用儲互社 AI 顧問分析", value=False,
+    "🤖 啟用儲互社 AI 顧問分析",
+    value=False,
     help=f"由 {GEMINI_MODEL} 生成分析建議（約 3–8 秒）",
 )
 
@@ -235,4 +250,6 @@ st.success(f"報告大小：{len(html) / 1024:.0f} KB")
 st.markdown("### 📋 診斷結果摘要")
 st.markdown(f"**狀態：** {d['status']}")
 st.markdown(f"**觸發事項：** {d['reason_text']}")
-st.markdown(f"**貸放比：** {d['eLoan']*100:.1f}%　｜　**逾放比：** {d['eOvd']*100:.2f}%　｜　**開支比：** {d['R0']*100:.1f}%")
+st.markdown(
+    f"**貸放比：** {d['eLoan']*100:.1f}%　｜　**逾放比：** {d['eOvd']*100:.2f}%　｜　**開支比：** {d['R0']*100:.1f}%"
+)

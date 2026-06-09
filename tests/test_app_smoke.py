@@ -2,7 +2,6 @@
 
 import importlib
 import importlib.util
-import sys
 import pathlib
 import pytest
 

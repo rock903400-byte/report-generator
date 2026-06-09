@@ -5,7 +5,7 @@ def safe_div(n, d):
     try:
         if d and not pd.isna(d) and d != 0:
             return n / d
-    except:
+    except Exception:
         pass
     return 0.0
 
@@ -18,12 +18,12 @@ def format_large_number(n, decimals=2):
         if abs(n) >= 1e4:
             return f"{n/1e4:.0f} 萬元"
         return f"{n:,.0f} 元"
-    except:
+    except Exception:
         return str(n)
 
 
 def fmt_pct(v, decimals=1):
     try:
         return f"{float(v)*100:.{decimals}f}%"
-    except:
+    except Exception:
         return "—"

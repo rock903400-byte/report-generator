@@ -4,16 +4,25 @@ from report_config import REGIONS, GEMINI_MODEL, get_all_unions, find_union, THR
 def test_regions_structure():
     assert "雲林" in REGIONS
     assert "嘉義" in REGIONS
+    assert "台中" in REGIONS
+    assert "南投" in REGIONS
+    assert "彰化" in REGIONS
     all_unions = [(sid, sname) for unions in REGIONS.values() for sid, sname in unions]
-    assert len(all_unions) == 32
+    assert len(all_unions) == 105
 
 
 def test_get_all_unions():
     result = get_all_unions()
-    assert len(result) == 32
+    assert len(result) == 105
     assert all(len(item) == 3 for item in result)
     assert (3403, "海星", "嘉義") in result
     assert (3201, "百成", "雲林") in result
+    assert (2201, "道明", "台中") in result
+    assert (2315, "弗傳慈心", "台中") in result
+    assert (2401, "眉溪", "南投") in result
+    assert (2440, "日月潭", "南投") in result
+    assert (3101, "永祥", "彰化") in result
+    assert (3127, "海豐", "彰化") in result
 
 
 def test_find_union_by_number():
@@ -40,9 +49,15 @@ def test_gemini_model():
 
 def test_thresholds_have_keys():
     required = [
-        "high_risk_ovd", "liquidity_loan", "idle_loan",
-        "ovd_safe_line", "high_risk_income_ratio", "high_risk_loan_ratio",
-        "high_risk_ovd_ratio", "savings_good", "provision_good",
+        "high_risk_ovd",
+        "liquidity_loan",
+        "idle_loan",
+        "ovd_safe_line",
+        "high_risk_income_ratio",
+        "high_risk_loan_ratio",
+        "high_risk_ovd_ratio",
+        "savings_good",
+        "provision_good",
     ]
     for key in required:
         assert key in THRESHOLDS
