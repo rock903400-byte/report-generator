@@ -65,7 +65,7 @@ class TestBuildAiPrompt:
     def test_system_instructions_present(self):
         d = _make_d()
         prompt = build_ai_prompt(d)
-        assert '財務顧問' in prompt
+        assert '專業' in prompt
         assert '繁體中文' in prompt
 
     def test_new_prompt_format_keywords(self):
