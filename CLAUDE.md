@@ -7,14 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用指令
 
 ```bash
-# 測試（235 項）
+# 測試（235 項，CI gate：coverage ≥80%）
 python -m pytest tests/ -v
 python -m pytest tests/test_charts.py -v                           # 單檔
 python -m pytest tests/test_classifier.py::TestClassifySpecialCare -v  # 單類
+python -m pytest tests/ --cov --cov-fail-under=80                  # 含 coverage 檢查
 
 # 品質檢查（順序：format → lint → type-check）
 python -m black . --line-length 100
-python -m ruff check .
+python -m ruff check . --fix      # --fix 可自動修大部分問題
 python -m mypy report_config.py report_data.py report_charts.py report_html.py report_ai.py common/ --ignore-missing-imports --no-strict-optional
 
 # 本機 Streamlit
@@ -77,6 +78,7 @@ report_html.py    build_report(d, charts, ai_analysis) → HTML str
 | `classifier.py` | `classify(p, thresholds)` → (status, reason_text)，五狀態判定 |
 | `thresholds.py` | `DEFAULT_THRESHOLDS`、`load_thresholds(secrets)` |
 | `utils.py` | `safe_div()`、`format_large_number()`（≥億→「億元」）、`fmt_pct()` |
+| `constants.py` | `PERCENTAGE_FIELDS`（÷100 欄位集合）、`SHEETS`（Excel 工作表名稱）、`ACCOUNT_CODES`（CSV 科目代碼）、`C`（顏色 palette） |
 
 `report_config.py` re-exports `convert_minguo_date`, `get_value`, `safe_div`, `fmt`, `fmt_pct`，其他模組從 `report_config` import，不直接從 `common` import。
 
