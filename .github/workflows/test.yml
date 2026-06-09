@@ -12,5 +12,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt pytest-cov
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
       - name: Run tests with coverage
         run: python -m pytest tests/ -v --cov --cov-fail-under=80

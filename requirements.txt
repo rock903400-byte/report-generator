@@ -6,4 +6,5 @@ google-genai
 jinja2>=3.1
 pytest>=9.0
 pytest-cov>=7.0
+playwright>=1.40
 supabase>=2.0
