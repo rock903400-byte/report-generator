@@ -96,12 +96,12 @@ def call_gemini(prompt, api_key):
 
 
 def analyze_with_gemini(d, api_key=""):
-    """主入口；失敗回傳 None"""
+    """主入口；失敗回傳 (None, error_msg)"""
     if not api_key:
-        return None
+        return None, "未設定 API Key"
     try:
         prompt = build_ai_prompt(d)
-        return call_gemini(prompt, api_key)
+        result = call_gemini(prompt, api_key)
+        return result, None
     except Exception as e:
-        print(f"  AI 分析失敗：{e}")
-        return None
+        return None, str(e)

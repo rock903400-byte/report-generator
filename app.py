@@ -207,9 +207,9 @@ with st.status(f"⏳ 正在產生 {sname_full} 報告…", expanded=True) as sta
         api_key = st.secrets.get("GEMINI_API_KEY", "")
         if api_key:
             st.write("🤖 儲互社 AI 顧問分析中…")
-            ai_analysis = analyze_with_gemini(d, api_key)
+            ai_analysis, ai_error = analyze_with_gemini(d, api_key)
             if ai_analysis is None:
-                st.warning("AI 分析暫時無法使用")
+                st.error(f"AI 分析失敗：{ai_error}")
         else:
             st.warning("未設定 GEMINI_API_KEY，AI 分析無法使用")
 

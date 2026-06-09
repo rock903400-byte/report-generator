@@ -118,20 +118,23 @@ class TestCallGemini:
 class TestAnalyzeWithGemini:
     def test_no_key_returns_none(self):
         d = _make_d()
-        result = analyze_with_gemini(d, api_key="")
+        result, error = analyze_with_gemini(d, api_key="")
         assert result is None
+        assert error is not None
 
     def test_no_key_empty_string(self):
         d = _make_d()
-        result = analyze_with_gemini(d)
+        result, error = analyze_with_gemini(d)
         assert result is None
+        assert error is not None
 
     @patch("report_ai.call_gemini")
     def test_successful_analysis(self, mock_call):
         mock_call.return_value = "分析報告內容"
         d = _make_d()
-        result = analyze_with_gemini(d, api_key="test-key")
+        result, error = analyze_with_gemini(d, api_key="test-key")
         assert result == "分析報告內容"
+        assert error is None
         mock_call.assert_called_once()
 
     @patch("report_ai.call_gemini")
@@ -145,11 +148,12 @@ class TestAnalyzeWithGemini:
     @patch("report_ai.call_gemini", side_effect=Exception("API Error"))
     def test_exception_returns_none(self, mock_call):
         d = _make_d()
-        result = analyze_with_gemini(d, api_key="key")
+        result, error = analyze_with_gemini(d, api_key="key")
         assert result is None
 
     @patch("report_ai.call_gemini", side_effect=Exception("Timeout"))
     def test_api_error_does_not_raise(self, mock_call):
         d = _make_d()
-        result = analyze_with_gemini(d, api_key="key")
+        result, error = analyze_with_gemini(d, api_key="key")
         assert result is None
+        assert "Timeout" in error
