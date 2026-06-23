@@ -2,8 +2,8 @@ def classify(p, thresholds):
     T = thresholds
 
     c1 = p["R0"] > T["high_risk_income_ratio"] and p["R1"] > T["high_risk_income_ratio"]
-    c2 = p["eLoan"] < T["high_risk_loan_ratio"] and p["eLoan"] < p["sLoan"]
-    c3 = p["eOvd"] > T["high_risk_ovd_ratio"] and p["O0"] > p["O1"]
+    c2 = p["eLoan"] < T["high_risk_loan_ratio"]
+    c3 = p["eOvd"] > T["high_risk_ovd"] and p["O0"] > p["O1"]
     c4 = p["M0"] < p["M1"] < p["M2"] < p["M3"]
     c5 = p["S0"] < p["S1"] < p["S2"] < p["S3"]
 
@@ -38,7 +38,7 @@ def classify(p, thresholds):
     if p["eOvd"] > T["ovd_safe_line"]:
         notes.append(f"逾放比偏高 {p['eOvd']:.1%}")
     if p["R0"] >= T["high_risk_income_ratio"]:
-        notes.append(f"今年虧損 開支比 {p['R0']:.1%}")
+        notes.append(f"去年年底虧損 開支比 {p['R0']:.1%}")
     if p["memG"] < 0 and p["shrG"] < 0:
         notes.append("社員、股金雙降")
     elif p["memG"] < 0:

@@ -285,7 +285,7 @@ def build_report(d, charts, ai_analysis=None):
 
 
     if loan_prev is not None:
-        _ld = d["eLoan"] - loan_prev
+        _ld = d["curr_eLoan"] - loan_prev
         loan_yoy = f"  {'▲' if _ld >= 0 else '▼'} {abs(_ld * 100):.1f}pp vs 去年"
     else:
         loan_yoy = ""
@@ -333,9 +333,9 @@ def build_report(d, charts, ai_analysis=None):
         },
         {
             "label": "貸放比",
-            "value": fmt_pct(d["eLoan"]),
-            "sub": f"{'偏低' if d['eLoan'] < 0.4 else '偏高' if d['eLoan'] > 0.8 else '正常範圍'} (40–80%){loan_yoy}",
-            "good": 0.4 <= d["eLoan"] <= 0.8,
+            "value": fmt_pct(d["curr_eLoan"]),
+            "sub": f"{'偏低' if d['curr_eLoan'] < 0.4 else '偏高' if d['curr_eLoan'] > 0.8 else '正常範圍'} (40–80%){loan_yoy}",
+            "good": 0.4 <= d["curr_eLoan"] <= 0.8,
         },
         {
             "label": "儲蓄率",
@@ -345,9 +345,9 @@ def build_report(d, charts, ai_analysis=None):
         },
         {
             "label": "逾放比",
-            "value": fmt_pct(d["eOvd"]),
-            "sub": f"{'⚠ 警戒' if d['eOvd'] > 0.02 else '✓ 正常'} (警戒值 2%)",
-            "good": d["eOvd"] <= 0.02,
+            "value": fmt_pct(d["curr_eOvd"]),
+            "sub": f"{'⚠ 警戒' if d['curr_eOvd'] > 0.02 else '✓ 正常'} (警戒值 2%)",
+            "good": d["curr_eOvd"] <= 0.02,
         },
         {
             "label": "開支比(年)",

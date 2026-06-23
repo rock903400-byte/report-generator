@@ -34,8 +34,12 @@ def _clean_excel(df_m_raw, df_l_raw):
     df_m_raw["年月"] = df_m_raw["年月"].apply(convert_minguo_date)
     df_l_raw["年月"] = df_l_raw["年月"].apply(convert_minguo_date)
 
-    for col in ["社員數", "股金", "貸放比"]:
+    for col in ["社員數", "股金"]:
         df_m_raw[col] = pd.to_numeric(df_m_raw[col], errors="coerce").fillna(0)
+
+    df_m_raw["貸放比"] = defensive_clean_series(
+        pd.to_numeric(df_m_raw["貸放比"], errors="coerce").fillna(0), "貸放比"
+    )
 
     df_m_raw["儲蓄率"] = defensive_clean_series(
         pd.to_numeric(df_m_raw["儲蓄率"], errors="coerce").fillna(0), "儲蓄率"
@@ -187,9 +191,13 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
 
     curr_M = get_value(union_m, "社員數", max_d)
     curr_S = get_value(union_m, "股金", max_d)
-    memG_curr = safe_div(curr_M - M0, M0)
-    shrG_curr = safe_div(curr_S - S0, S0)
+    M_12M = get_value(union_m, "社員數", T_12M)
+    S_12M = get_value(union_m, "股金", T_12M)
+    memG_curr = safe_div(curr_M - M_12M, M_12M)
+    shrG_curr = safe_div(curr_S - S_12M, S_12M)
     eOvd_12m = get_value(union_l, "逾放比", T_12M)
+    curr_eLoan = get_value(union_m, "貸放比", max_d)
+    curr_eOvd = get_value(union_l, "逾放比", max_d)
 
     # ── 風險診斷（2/5 原則）─────────────────────────────
     STATUS_COLORS = {
@@ -225,7 +233,7 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
     # 保留 notes + risk_count 給模板用
     c1 = R0 > THRESHOLDS["high_risk_income_ratio"] and R1 > THRESHOLDS["high_risk_income_ratio"]
     c2 = eLoan < THRESHOLDS["high_risk_loan_ratio"]
-    c3 = eOvd > THRESHOLDS["high_risk_ovd_ratio"] and O0 > O1
+    c3 = eOvd > THRESHOLDS["high_risk_ovd"] and O0 > O1
     c4 = M0 < M1 < M2 < M3
     c5 = S0 < S1 < S2 < S3
     notes = []
@@ -276,6 +284,8 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
         shrG=shrG,
         curr_M=curr_M,
         curr_S=curr_S,
+        curr_eLoan=curr_eLoan,
+        curr_eOvd=curr_eOvd,
         memG_curr=memG_curr,
         shrG_curr=shrG_curr,
         eOvd_12m=eOvd_12m,

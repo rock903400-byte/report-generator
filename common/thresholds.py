@@ -9,7 +9,7 @@ DEFAULT_THRESHOLDS = {
     "high_risk_loan_ratio": 0.1,
     "high_risk_ovd_ratio": 0.5,
     "savings_good": 0.6,
-    "provision_good": 0.01,
+    "provision_good": 1.0,
 }
 
 
