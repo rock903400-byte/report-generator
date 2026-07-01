@@ -84,6 +84,20 @@
       position: relative;
       letter-spacing: 0.05em;
     }
+    .degrade-badge {
+      display: inline-block;
+      background: #FEF3C7;
+      color: #D97706;
+      border: 1px solid #FCD34D;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-top: 1rem;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
 
     /* ── CONTAINER ──────────────────────────────── */
     .container {
@@ -354,7 +368,10 @@
       .chart-grid-2 { grid-template-columns: 1fr 1fr; gap: 1rem; }
       .ai-box { background: #EFF6FF; }
       .ai-box::after { display: none; }
-    }
+    /* Sparklines */
+    .sparkline-cell { display: inline-flex; vertical-align: middle; margin-left: 6px; }
+    .sparkline-cell svg { overflow: visible; }
+    @media print { .sparkline-cell svg { -webkit-print-color-adjust: exact; } }
   </style>
 </head>
 <body>
@@ -363,6 +380,9 @@
   <h1>📊 {{ s_name }} 財務分析報告</h1>
   <div class="meta">社號：{{ s_no }}　｜　資料截至：{{ data_end }}　｜　報告產製：{{ report_date }}</div>
   <div class="status-badge">{{ status }}</div>
+  {% if graceful_degradation.lack_years %}
+    <span class="degrade-badge">⚠ 部分分析受限（資料不足 3 年）</span>
+  {% endif %}
 </div>
 
 <div class="container">

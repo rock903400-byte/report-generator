@@ -294,6 +294,13 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
         reason_text=reason_text,
         notes=notes,
         risk_count=risk_count,
+        graceful_degradation={
+            "lack_years": len(sorted(set(list(union_m[union_m["年月"].dt.month == 12]["年月"].dt.year.unique()) + list(union_l[union_l["年月"].dt.month == 12]["年月"].dt.year.unique())))) < 3,
+            "lack_csv": not has_csv,
+            "lack_recent": len(union_m) < 6,
+            "eProv_missing": eProv_note == "資料缺失",
+            "eProv_no_ovd": eProv_note == "無逾期",
+        },
     )
 
 

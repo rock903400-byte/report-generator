@@ -55,3 +55,22 @@ class TestFullPipeline:
         assert "逾放比深度分析" in html
         assert "財務科目分析" in html
         assert "近 12 期" in html
+
+    def test_pipeline_all_features(self, tmp_path, sample_excel_bytes):
+        import os
+        from report_export import export_pdf, export_excel
+        df_m, df_l, df_csv = load_data_from_bytes(sample_excel_bytes)
+        d = extract_union_data(df_m, df_l, df_csv, "3403")
+        charts = generate_all_charts(d)
+        html = build_report(d, charts)
+
+        pdf_path = os.path.join(tmp_path, "report.pdf")
+        xlsx_path = os.path.join(tmp_path, "report.xlsx")
+
+        export_pdf(html, pdf_path)
+        export_excel(d, xlsx_path)
+
+        assert os.path.exists(pdf_path)
+        assert os.path.getsize(pdf_path) > 0
+        assert os.path.exists(xlsx_path)
+        assert os.path.getsize(xlsx_path) > 0

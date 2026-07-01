@@ -123,6 +123,13 @@ def test_extract_union_data(sample_excel_bytes):
     assert "status" in d
     assert "notes" in d
     assert "risk_count" in d
+    assert "graceful_degradation" in d
+    gd = d["graceful_degradation"]
+    assert "lack_years" in gd
+    assert "lack_csv" in gd
+    assert "lack_recent" in gd
+    assert "eProv_missing" in gd
+    assert "eProv_no_ovd" in gd
 
 
 def test_extract_union_data_not_found(sample_excel_bytes):

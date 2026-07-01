@@ -8,6 +8,7 @@ from datetime import date
 from jinja2 import Environment, FileSystemLoader
 from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct, GEMINI_MODEL
 from report_data import compute_ovd_stats
+from common.sparkline import _sparkline_svg
 
 
 def _inline_md(text):
@@ -245,8 +246,10 @@ def build_kpi_yoy_table(d):
                 else ' style="text-align:center"'
             )
             tds.append(f"<td{st}>{txt}</td>")
+        svg_code = _sparkline_svg(list(vals.values()))
+        sparkline_html = f' <span class="sparkline-cell">{svg_code}</span>' if svg_code else ""
         body += (
-            f'<tr><th style="text-align:left;white-space:nowrap">{label}</th>{"".join(tds)}</tr>\n'
+            f'<tr><th style="text-align:left;white-space:nowrap">{label}{sparkline_html}</th>{"".join(tds)}</tr>\n'
         )
 
     note = (
@@ -504,5 +507,6 @@ def build_report(d, charts, ai_analysis=None):
         charts=charts,
         table_m_html=table_m_html,
         table_l_html=table_l_html,
+        graceful_degradation=d.get("graceful_degradation", {}),
     )
     return _template.render(ctx)
