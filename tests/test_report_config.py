@@ -2,40 +2,49 @@ from report_config import REGIONS, GEMINI_MODEL, get_all_unions, find_union, THR
 
 
 def test_regions_structure():
-    assert "雲林" in REGIONS
-    assert "嘉義" in REGIONS
-    assert "台中" in REGIONS
-    assert "南投" in REGIONS
-    assert "彰化" in REGIONS
+    for region in ["北區", "中區", "南區", "東區", "離島區"]:
+        assert region in REGIONS
     all_unions = [(sid, sname) for unions in REGIONS.values() for sid, sname in unions]
-    assert len(all_unions) == 105
+    assert len(all_unions) == 40
 
 
 def test_get_all_unions():
     result = get_all_unions()
-    assert len(result) == 105
+    assert len(result) == 40
     assert all(len(item) == 3 for item in result)
-    assert (3403, "海星", "嘉義") in result
-    assert (3201, "百成", "雲林") in result
-    assert (2201, "道明", "台中") in result
-    assert (2315, "弗傳慈心", "台中") in result
-    assert (2401, "眉溪", "南投") in result
-    assert (2440, "日月潭", "南投") in result
-    assert (3101, "永祥", "彰化") in result
-    assert (3127, "海豐", "彰化") in result
+    assert (1101, "晨光", "北區") in result
+    assert (1208, "長洲", "中區") in result
+    assert (1301, "雲棲", "南區") in result
+    assert (1408, "北衍", "東區") in result
+    assert (1501, "潮生", "離島區") in result
+
+
+def test_regions_stay_within_demo_namespace():
+    """守門測試：示範資料必須留在虛構命名空間內。
+
+    刻意只做結構檢查、不列舉真實名稱——把真實機構名稱寫進公開 repo，
+    正是這個 demo 要避免的事。
+    """
+    codes = {sid for unions in REGIONS.values() for sid, _ in unions}
+    assert all(1100 <= c < 1600 for c in codes), (
+        f"示範代號應落在 1100–1599 區間，發現越界：{sorted(c for c in codes if not 1100 <= c < 1600)}"
+    )
+    assert set(REGIONS) == {"北區", "中區", "南區", "東區", "離島區"}, (
+        f"區域名稱偏離示範集合：{set(REGIONS)}"
+    )
 
 
 def test_find_union_by_number():
-    r = find_union("3403")
+    r = find_union("1101")
     assert r is not None
-    assert r[0] == 3403
-    assert r[1] == "海星"
+    assert r[0] == 1101
+    assert r[1] == "晨光"
 
 
 def test_find_union_by_name():
-    r = find_union("海星")
+    r = find_union("晨光")
     assert r is not None
-    assert r[0] == 3403
+    assert r[0] == 1101
 
 
 def test_find_union_nonexistent():
