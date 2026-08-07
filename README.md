@@ -1,6 +1,11 @@
 # report-generator
 
+[![CI](https://github.com/rock903400-byte/report-generator/actions/workflows/test.yml/badge.svg)](https://github.com/rock903400-byte/report-generator/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 > AI 報表產生器 — 自動化財務分析與營運報告生成系統
+
+**線上 Demo**（公開展示版）: https://wind-report-generator-demo.streamlit.app
 
 ## 功能特色
 
