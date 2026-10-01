@@ -5,7 +5,7 @@
 
 > AI 報表產生器 — 自動化財務分析與營運報告生成系統
 
-**線上 Demo**（公開展示版）: https://wind-report-generator-demo.streamlit.app
+**線上 Demo**（公開展示版）: https://wind-report-generator-demo.streamlit.app（免費版，首次開啟需喚醒約 30 秒）
 
 ## 功能特色
 
