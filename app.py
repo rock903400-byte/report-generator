@@ -144,7 +144,19 @@ if not _from_cloud:
     # ── 上傳到雲端並產生分享連結（管理員功能，需 ADMIN_PASSWORD）──
     _supabase = _init_supabase()
     if _supabase and _APP_URL:
-        from common.utils import verify_password
+        try:
+            from common.utils import verify_password
+        except ImportError:
+            # 雲端熱重載偶發舊模組殘留時，用 stdlib 頂上，App 不因此整站崩潰
+            import hmac
+
+            def verify_password(candidate, expected):
+                try:
+                    if not expected or candidate is None:
+                        return False
+                    return hmac.compare_digest(str(candidate), str(expected))
+                except Exception:
+                    return False
 
         _admin_expected = st.secrets.get("ADMIN_PASSWORD", "")
         with st.expander("☁️ 產生雲端分享連結（管理員功能）"):
