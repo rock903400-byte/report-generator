@@ -122,7 +122,7 @@ def _load_thresholds():
 THRESHOLDS = _load_thresholds()
 
 # ── Gemini AI ──────────────────────────────────────────────────
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 
 # ── 主題色 ────────────────────────────────────────────────────
 THEME_BG = "#F0F4F8"

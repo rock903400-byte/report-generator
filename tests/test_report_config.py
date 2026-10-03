@@ -53,7 +53,7 @@ def test_find_union_nonexistent():
 
 
 def test_gemini_model():
-    assert GEMINI_MODEL == "gemini-2.5-flash"
+    assert GEMINI_MODEL == "gemini-3.8-flash"
 
 
 def test_thresholds_have_keys():

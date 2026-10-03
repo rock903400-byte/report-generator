@@ -106,13 +106,12 @@ class TestBuildAiPrompt:
         prompt = build_ai_prompt(d)
         assert "無逾期貸款" in prompt
 
-    def test_prov_note_abnormal(self):
+    def test_prov_high_value_shown_as_is(self):
         d = _make_d()
-        d["eProv"] = 21.765
-        d["eProv_note"] = "數值異常"
+        d["eProv"] = 71.3
+        d["eProv_note"] = ""
         prompt = build_ai_prompt(d)
-        assert "數值異常" in prompt
-        assert "2176" not in prompt
+        assert "7130.0%" in prompt
 
 
 class TestCallGemini:
@@ -140,6 +139,25 @@ class TestCallGemini:
         args, kwargs = mock_instance.models.generate_content.call_args
         assert kwargs["contents"] == "my custom prompt"
         assert kwargs["model"] is not None
+
+    @patch("google.genai.Client")
+    def test_api_config_for_flash3(self, mock_client):
+        # 3.x Flash：禁 temperature，thinking 用 level（LOW 保低延遲）
+        mock_instance = MagicMock()
+        mock_client.return_value = mock_instance
+        mock_response = MagicMock()
+        mock_response.text = "result"
+        mock_instance.models.generate_content.return_value = mock_response
+
+        from report_config import GEMINI_MODEL
+
+        call_gemini("prompt", "key")
+        args, kwargs = mock_instance.models.generate_content.call_args
+        assert kwargs["model"] == GEMINI_MODEL
+        cfg = kwargs["config"]
+        assert cfg.temperature is None
+        assert cfg.thinking_config.thinking_level.value == "LOW"
+        assert cfg.max_output_tokens == 2048
 
 
 class TestAnalyzeWithGemini:

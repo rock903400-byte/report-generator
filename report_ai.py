@@ -3,7 +3,6 @@
 """
 
 from report_config import GEMINI_MODEL, fmt, fmt_pct
-from report_data import PROV_ABNORMAL
 
 _SYSTEM = """語氣：專業、客觀、簡潔，像寫給理事會的內部報告。
 
@@ -67,8 +66,6 @@ def build_ai_prompt(d):
         prov_text = "無資料（原始缺漏）"
     elif prov_note == "無逾期":
         prov_text = "0.0%（無逾期貸款）"
-    elif prov_note == "數值異常" or d["eProv"] > PROV_ABNORMAL:
-        prov_text = f"數值異常（原始 {d['eProv']:.1f} 倍，請勿直接引用，提醒使用者查核原始資料）"
     else:
         prov_text = fmt_pct(d["eProv"])
 
@@ -106,10 +103,11 @@ def call_gemini(prompt, api_key):
     response = client.models.generate_content(
         model=GEMINI_MODEL,
         contents=prompt,
+        # 3.x Flash 不支援 temperature / thinking_budget（server 報錯）；
+        # 用 thinking_level LOW 保持低延遲（原 thinking_budget=0 的對應做法）。
         config=types.GenerateContentConfig(
-            temperature=0.4,
             max_output_tokens=2048,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
+            thinking_config=types.ThinkingConfig(thinking_level="LOW"),
         ),
     )
     return response.text
