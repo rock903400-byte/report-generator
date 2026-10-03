@@ -2,8 +2,6 @@
 儲互社 AI 顧問分析（Gemini 串接）
 """
 
-from google import genai
-from google.genai import types
 from report_config import GEMINI_MODEL, fmt, fmt_pct
 
 _SYSTEM = """語氣：專業、客觀、簡潔，像寫給理事會的內部報告。
@@ -98,6 +96,9 @@ def build_ai_prompt(d):
 
 def call_gemini(prompt, api_key):
     """呼叫 Gemini API，回傳分析文字"""
+    from google import genai
+    from google.genai import types
+
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model=GEMINI_MODEL,

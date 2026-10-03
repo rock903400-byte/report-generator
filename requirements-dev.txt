@@ -1,0 +1,5 @@
+# 本機開發 / CI 專用（不會部署到 Streamlit Cloud）
+-r requirements.txt
+pytest>=9.0
+pytest-cov>=7.0
+playwright>=1.40

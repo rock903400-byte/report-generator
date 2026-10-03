@@ -1,10 +1,9 @@
+# 正式環境依賴（Streamlit Cloud 喚醒時安裝）— 請保持精簡
+# 測試工具請放 requirements-dev.txt，不要加進來拖慢冷啟動
 pandas>=2.0
 plotly>=5.18
 streamlit>=1.28
 openpyxl>=3.1
 google-genai
 jinja2>=3.1
-pytest>=9.0
-pytest-cov>=7.0
-playwright>=1.40
 supabase>=2.0

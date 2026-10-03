@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest-cov
+        run: pip install -r requirements-dev.txt
       - name: Install Playwright browsers
         run: playwright install chromium --with-deps
       - name: Run tests with coverage

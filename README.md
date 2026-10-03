@@ -5,7 +5,10 @@
 
 > AI 報表產生器 — 自動化財務分析與營運報告生成系統
 
-**線上 Demo**（公開展示版）: https://wind-report-generator-demo.streamlit.app（免費版，首次開啟需喚醒約 30 秒）
+**線上 Demo**（公開展示版）: https://wind-report-generator-demo.streamlit.app（免費版，若遇休眠請按 Yes 喚醒，約 10–20 秒）
+
+> 免費版 Streamlit Cloud 久未使用會休眠。本專案已做：精簡 `requirements.txt` + 首屏延遲載入加速喚醒，
+> 並用 UptimeRobot（每 5 分鐘）+ GitHub Actions `keep-warm.yml`（上班時間每 25 分鐘）保活。
 
 ## 功能特色
 
@@ -23,7 +26,8 @@
 
 ### 1. 安裝環境需求
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt            # 正式 / Streamlit Cloud 用（精簡版）
+pip install -r requirements-dev.txt       # 本機開發 / 跑測試用
 ```
 
 ### 2. 啟動 Streamlit 服務

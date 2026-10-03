@@ -8,17 +8,14 @@ Streamlit Cloud 版：理事會報告產生器
 import os
 import sys
 import uuid
-import pandas as pd
 import streamlit as st
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# NOTE: 為了加速 Streamlit Cloud 冷啟動，pandas / plotly / jinja2 / google-genai
+# 一律延遲載入（lazy import），首屏只載 streamlit + report_config。
 from report_config import REGIONS, GEMINI_MODEL
-from report_data import load_data_from_bytes, extract_union_data
-from report_charts import generate_all_charts
-from report_html import build_report
-from report_ai import analyze_with_gemini
 
 
 # ── Supabase 工具 ──────────────────────────────────────────────
@@ -42,6 +39,8 @@ def _download_from_supabase(_client, bucket: str, fname: str) -> bytes:
 
 @st.cache_data(show_spinner=False)
 def _load_cached(excel_bytes: bytes, csv_bytes: bytes | None):
+    from report_data import load_data_from_bytes
+
     return load_data_from_bytes(excel_bytes, csv_bytes)
 
 
@@ -182,6 +181,8 @@ selected = st.selectbox("選擇儲互社", union_names, index=0)
 sid = int(selected.split("（")[1].rstrip("）"))
 sname = selected.split("（")[0]
 sname_full = f"{sname}社"
+import pandas as pd  # 延遲到資料已載入才 import，避免首屏冷啟動變慢
+
 data_end = df_m[df_m["社號"] == str(sid)]["年月"].max()
 data_end_str = data_end.strftime("%Y-%m") if pd.notna(data_end) else "—"
 
@@ -205,6 +206,8 @@ if not generate_btn:
 with st.status(f"⏳ 正在產生 {sname_full} 報告…", expanded=True) as status:
     st.write("🔍 提取儲互社數據…")
     try:
+        from report_data import extract_union_data
+
         d = extract_union_data(df_m, df_l, df_csv, str(sid))
     except Exception as e:
         st.error(f"提取數據失敗：{e}")
@@ -212,6 +215,8 @@ with st.status(f"⏳ 正在產生 {sname_full} 報告…", expanded=True) as sta
 
     st.write("📈 生成圖表…")
     try:
+        from report_charts import generate_all_charts
+
         charts = generate_all_charts(d)
     except Exception as e:
         st.error(f"圖表生成失敗：{e}")
@@ -222,6 +227,8 @@ with st.status(f"⏳ 正在產生 {sname_full} 報告…", expanded=True) as sta
         api_key = st.secrets.get("GEMINI_API_KEY", "")
         if api_key:
             st.write("🤖 儲互社 AI 顧問分析中…")
+            from report_ai import analyze_with_gemini
+
             ai_analysis, ai_error = analyze_with_gemini(d, api_key)
             if ai_analysis is None:
                 st.error(f"AI 分析失敗：{ai_error}")
@@ -229,6 +236,8 @@ with st.status(f"⏳ 正在產生 {sname_full} 報告…", expanded=True) as sta
             st.warning("未設定 GEMINI_API_KEY，AI 分析無法使用")
 
     st.write("📝 組裝報告…")
+    from report_html import build_report
+
     html = build_report(d, charts, ai_analysis)
 
     status.update(label=f"✅ {sname_full} 報告產生完成！", state="complete")

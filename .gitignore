@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 output/
 *.txt
+!requirements.txt
+!requirements-dev.txt
 .streamlit/secrets.toml
 海星社_理事會報告.*
 鹿草社_理事會報告.*

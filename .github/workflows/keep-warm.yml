@@ -1,0 +1,25 @@
+name: Keep Streamlit Warm
+
+# 免費保活：上班時間每 25 分鐘 ping 一次，避免 Streamlit Cloud 休眠。
+# 主力保活請用 UptimeRobot（每 5 分鐘），這個只是備援。
+# 只在台灣上班時間跑，節省 Actions 免費額度。
+
+on:
+  schedule:
+    # 00:00–10:00 UTC = 08:00–18:00 台北時間（UTC+8），每 25 分鐘
+    - cron: "*/25 0-10 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Wake Streamlit app
+        run: |
+          for url in \
+            "https://rock903400-byte-report-generator-app-8hwvwm.streamlit.app/" \
+            "https://rock903400-byte-report-generator-app-8hwvwm.streamlit.app/_stcore/health" ; do
+            echo "Pinging $url"
+            curl -sSL --max-time 60 -o /dev/null -w "HTTP %{http_code}\n" "$url" || echo "ping failed (will retry next run): $url"
+          done

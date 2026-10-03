@@ -108,7 +108,7 @@ class TestBuildAiPrompt:
 
 
 class TestCallGemini:
-    @patch("report_ai.genai.Client")
+    @patch("google.genai.Client")
     def test_successful_call(self, mock_client):
         mock_instance = MagicMock()
         mock_client.return_value = mock_instance
@@ -120,7 +120,7 @@ class TestCallGemini:
         assert result == "AI 分析結果"
         mock_instance.models.generate_content.assert_called_once()
 
-    @patch("report_ai.genai.Client")
+    @patch("google.genai.Client")
     def test_prompt_passed_to_api(self, mock_client):
         mock_instance = MagicMock()
         mock_client.return_value = mock_instance
