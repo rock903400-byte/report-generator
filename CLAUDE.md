@@ -121,3 +121,15 @@ report_html.py    build_report(d, charts, ai_analysis) → HTML str
 - **`secrets.toml`** 在 `.gitignore`；本機複製 `secrets_template.toml`；Streamlit Cloud 直接在 Dashboard 設定。
 - **E402 noqa**：`report_config.py` 和 `report_data.py` 因 `sys.path` 前置操作，`import` 行需 `# noqa: E402`；re-export import 需 `# noqa: F401`。
 - **`.coverage` / `htmlcov/`** 不在 `.gitignore`，勿 commit。
+
+---
+
+## 操作記憶（2026-10-03 冷啟動優化）
+
+- 本倉庫對應 Streamlit：`rock903400-byte-report-generator-app-8hwvwm.streamlit.app`（命名規則：帳號-倉庫-主程式）。
+- 免費版 Cloud 會休眠是平台機制，只能緩解：`requirements.txt` 保持正式精簡（測試工具放 `requirements-dev.txt`，CI 裝 dev 版）；
+  `app.py` 首屏只載 streamlit + report_config，pandas/plotly/jinja2/genai 一律 lazy import（未上傳時 `st.stop()` 擋在前面，不會載入）；
+  `report_ai.py` 的 `google.genai` 在 `call_gemini()` 內才 import（測試 mock 改 patch `google.genai.Client`）。
+- 保活：UptimeRobot 每 5 分鐘（主力）+ `.github/workflows/keep-warm.yml` 上班時間每 25 分鐘（備援）。
+- `.gitignore` 的 `*.txt` 需搭配 `!requirements.txt` / `!requirements-dev.txt`，否則新依賴檔會被吃掉。
+- 使用者偏好：繁體中文回覆；只接受免費託管；commit/push 需明確指示才執行。
