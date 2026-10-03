@@ -358,12 +358,12 @@ class TestBuildReport:
         html = build_report(d, charts)
         assert "資料缺失" in html
 
-    def test_kpi_prov_note_abnormal(self):
+    def test_kpi_high_prov_shown_as_is(self):
         d = self._make_d()
-        d["eProv"] = 21.765
+        d["eProv"] = 71.3
         d["eOvd"] = 0.0042
-        d["eProv_note"] = "數值異常"
+        d["eProv_note"] = ""
         charts = {"member_capital_trend": "<div>chart</div>"}
         html = build_report(d, charts)
-        assert "數值異常" in html
-        assert "2176" not in html
+        assert "7130.0%" in html
+        assert "數值異常" not in html

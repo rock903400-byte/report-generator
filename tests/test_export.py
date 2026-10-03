@@ -61,15 +61,15 @@ def test_export_pdf_with_empty_input(tmp_path):
     assert os.path.getsize(pdf_path) > 0
 
 
-def test_export_excel_abnormal_prov_flagged(tmp_path, sample_excel_bytes):
+def test_export_excel_high_prov_shown_as_is(tmp_path, sample_excel_bytes):
     df_m, df_l, df_csv = load_data_from_bytes(sample_excel_bytes)
-    df_l.loc[df_l["社號"] == "3403", "提撥率"] = 25.0
+    df_l.loc[df_l["社號"] == "3403", "提撥率"] = 71.3
     d = extract_union_data(df_m, df_l, df_csv, "3403")
-    assert d["eProv_note"] == "數值異常"
+    assert d["eProv_note"] == ""
 
-    xlsx_path = os.path.join(tmp_path, "test_abnormal.xlsx")
+    xlsx_path = os.path.join(tmp_path, "test_high_prov.xlsx")
     export_excel(d, xlsx_path)
 
     kpi = pd.ExcelFile(xlsx_path).parse("KPI 摘要")
     prov_row = kpi[kpi["指標項目"] == "提撥率"].iloc[0]
-    assert "數值異常" in str(prov_row["數值"])
+    assert "7130.0%" in str(prov_row["數值"])

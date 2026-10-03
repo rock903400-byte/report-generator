@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 
 from report_config import fmt
-from report_data import extract_union_data, PROV_ABNORMAL
+from report_data import extract_union_data
 from report_charts import generate_all_charts, make_balance_sheet_html, chart_waterfall
 from report_html import build_report
 
@@ -223,17 +223,15 @@ class TestChartDataReconciliation:
 
 
 class TestProvReconciliation:
-    """異常提撥率：標示而非爆炸百分比。"""
+    """高提撥率照實呈現（選項 C：不標示，由看報告的人判斷）。"""
 
-    def test_abnormal_union_flagged(self, d_b):
+    def test_high_prov_passthrough(self, d_b):
         assert d_b["eProv"] == 25.0
-        assert d_b["eProv"] > PROV_ABNORMAL
-        assert d_b["eProv_note"] == "數值異常"
+        assert d_b["eProv_note"] == ""
 
-    def test_abnormal_not_rendered_as_pct(self, d_b):
+    def test_high_prov_rendered_as_pct(self, d_b):
         html = build_report(d_b, {"member_capital_trend": "<div>x</div>"})
-        assert "數值異常" in html
-        assert "2500" not in html
+        assert "2500.0%" in html
 
 
 class TestEndToEndRealistic:

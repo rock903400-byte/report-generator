@@ -1,7 +1,6 @@
 import pandas as pd
 from playwright.sync_api import sync_playwright
 from report_config import THRESHOLDS, fmt, fmt_pct
-from report_data import PROV_ABNORMAL
 
 def export_pdf(html_str, output_path):
     """
@@ -61,9 +60,6 @@ def export_excel(d, output_path):
     elif prov_note == "無逾期":
         prov_value = "0.0%（無逾期）"
         prov_sub = "無逾期貸款，無需提撥"
-    elif prov_note == "數值異常" or d["eProv"] > PROV_ABNORMAL:
-        prov_value = "—（數值異常）"
-        prov_sub = "原始值超出合理範圍，請查核"
     else:
         prov_value = fmt_pct(d["eProv"])
         prov_sub = f"{'充足 ✓' if prov_ok else '不足 ✗'}（門檻 {prov_thr * 100:.0f}%）"
