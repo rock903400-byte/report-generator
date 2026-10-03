@@ -639,6 +639,8 @@ def chart_waterfall(d):
         exp_groups["教育社務費"] = grp("57")
     if grp("58") > 0:
         exp_groups["獎勵費"] = grp("58")
+    if grp("59") > 0:
+        exp_groups["其他支出"] = grp("59")
     net = revenue - expense
 
     labels = ["總收入"] + list(exp_groups.keys()) + ["本期損益"]
@@ -781,14 +783,18 @@ def make_balance_sheet_html(d):
         return "<p style='color:#94A3B8'>無 CSV 財務資料</p>"
 
     df = d["df_csv"]
-    latest_yr = int(df[df["年月"].notna()]["年月"].dt.year.max())
-    yr_df = df[df["年月"].dt.year == latest_yr].copy()
+    df_valid = df[df["年月"].notna()].copy()
+    if df_valid.empty:
+        return "<p style='color:#94A3B8'>無年度資料</p>"
+    # 資產/負債/權益是時點餘額，取最新一期快照（不可整年加總）
+    latest_m = df_valid["年月"].max()
+    snap_df = df_valid[df_valid["年月"] == latest_m].copy()
 
     def accs(*pfxs):
         rows = []
         for p in pfxs:
             g = (
-                yr_df[yr_df["會計科目"].str.startswith(p)]
+                snap_df[snap_df["會計科目"].str.startswith(p)]
                 .groupby(["會計科目", "會科名稱"])["當月金額"]
                 .sum()
                 .reset_index()
@@ -916,7 +922,7 @@ def make_balance_sheet_html(d):
     return f"""
 <div style="text-align:center;font-size:1.15rem;font-weight:700;
             color:#1E293B;padding:0.6rem 0 1rem;letter-spacing:0.03em">
-  {latest_yr} 年度　資產負債表
+  {latest_m.strftime('%Y年%m月')}　資產負債表（月底餘額快照）
 </div>
 <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;min-width:560px">

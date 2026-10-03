@@ -15,3 +15,12 @@ verify_data.py
 verify_full.py
 check_html.py
 app_cloud.py
+
+# ── 真實上傳資料與產出（絕不進版控）──
+*.xlsx
+*.csv
+*_財務分析報告_*.html
+*_理事會報告_*.html
+.coverage
+htmlcov/
+.pytest_cache/

@@ -242,6 +242,21 @@ class TestChartWaterfall:
         html = chart_waterfall(d)
         assert "plotly-graph-div" in html or "無" in html
 
+    def test_waterfall_includes_59_other_expense(self):
+        # 59 開頭未歸入 51–58 會造成 total 對不上（真實資料殘差約 0.2%）
+        d = _build_d_with_csv()
+        extra = pd.DataFrame(
+            [["2026-04-01", "3403", "5901", "其他支出", 50000.0]],
+            columns=CSV_COLS,
+        )
+        extra["年月"] = pd.to_datetime(extra["年月"])
+        d["df_csv"] = pd.concat([d["df_csv"], extra], ignore_index=True)
+        html = chart_waterfall(d)
+        assert "plotly-graph-div" in html
+        # 收入 50萬 − (20萬 + 10萬 + 5萬) = 淨利 15萬
+        assert "-50000" in html
+        assert "150000" in html
+
 
 class TestChartAnnualTrend:
     def test_no_csv_fallback(self):
@@ -277,6 +292,15 @@ class TestMakeBalanceSheetHtml:
         assert "資產合計" in html
         assert "負債及權益合計" in html
         assert "資產負債表" in html
+
+    def test_uses_latest_snapshot_not_year_sum(self):
+        # 餘額型科目不可整年加總：夾具 2026-04 短期放款 3000萬、
+        # 2025-04 短期放款 2800萬，快照應顯示 3000萬而非 5800萬
+        d = _build_d_with_csv()
+        html = make_balance_sheet_html(d)
+        assert "2026年04月" in html
+        assert "3000 萬元" in html
+        assert "5800 萬元" not in html
 
 
 class TestChartLendingRate:

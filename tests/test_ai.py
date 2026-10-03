@@ -106,6 +106,14 @@ class TestBuildAiPrompt:
         prompt = build_ai_prompt(d)
         assert "無逾期貸款" in prompt
 
+    def test_prov_note_abnormal(self):
+        d = _make_d()
+        d["eProv"] = 21.765
+        d["eProv_note"] = "數值異常"
+        prompt = build_ai_prompt(d)
+        assert "數值異常" in prompt
+        assert "2176" not in prompt
+
 
 class TestCallGemini:
     @patch("google.genai.Client")

@@ -7,7 +7,7 @@ from html import escape as html_escape
 from datetime import date
 from jinja2 import Environment, FileSystemLoader
 from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct, GEMINI_MODEL
-from report_data import compute_ovd_stats
+from report_data import compute_ovd_stats, PROV_ABNORMAL
 from common.sparkline import _sparkline_svg
 
 
@@ -184,6 +184,8 @@ def build_kpi_yoy_table(d):
         ovd_v = _lval(yr, "逾放比")
         if prov_v is None:
             return None
+        if prov_v > PROV_ABNORMAL:
+            return "—（數值異常）"
         if prov_v == 0 and ovd_v == 0:
             return "0.0%（無逾期）"
         if prov_v == 0 and ovd_v is not None and ovd_v > 0:
@@ -307,6 +309,10 @@ def build_report(d, charts, ai_analysis=None):
         prov_value = "0.0%（無逾期）"
         prov_sub = "無逾期貸款，無需提撥"
         prov_good = True
+    elif prov_note == "數值異常":
+        prov_value = "—（數值異常）"
+        prov_sub = f"原始值 {d['eProv']:.1f} 倍，超出合理範圍，請查核"
+        prov_good = False
     else:
         prov_value = fmt_pct(d["eProv"])
         prov_sub = f"{'充足 ✓' if prov_ok else '不足 ✗'}（門檻 {prov_thr * 100:.0f}%）"
@@ -437,6 +443,8 @@ def build_report(d, charts, ai_analysis=None):
     def _fmt_prov_row(row):
         prov = row["提撥率"]
         ovd = row["逾放比"]
+        if prov > PROV_ABNORMAL:
+            return "—（數值異常）"
         if prov == 0 and ovd == 0:
             return "0.0%（無逾期）"
         if prov == 0 and ovd > 0:

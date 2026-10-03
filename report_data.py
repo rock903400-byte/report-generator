@@ -28,6 +28,11 @@ SHEETS = {
     "REGION": "區域分類表",
 }
 
+# 提撥率超過 1000% 視為來源資料異常（逾期趨近零時分母灌水），不直接顯示百分比。
+# 刻意放在 DEFAULT_THRESHOLDS 之外：tests/test_thresholds.py 鎖定門檻鍵集合，
+# 此處為顯示層保護，避免改動門檻契約。
+PROV_ABNORMAL = 10.0
+
 
 def _clean_excel(df_m_raw, df_l_raw):
     """共用清洗邏輯"""
@@ -184,6 +189,8 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
             bool(union_l["提撥率_缺失"].iloc[-1]) if "提撥率_缺失" in union_l.columns else True
         )
         eProv_note = "資料缺失" if is_missing else ""
+    elif eProv > PROV_ABNORMAL:
+        eProv_note = "數值異常"
     else:
         eProv_note = ""
     memG = safe_div(M0 - M1, M1)
@@ -300,6 +307,7 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
             "lack_recent": len(union_m) < 6,
             "eProv_missing": eProv_note == "資料缺失",
             "eProv_no_ovd": eProv_note == "無逾期",
+            "eProv_abnormal": eProv_note == "數值異常",
         },
     )
 
@@ -374,6 +382,8 @@ def compute_ovd_stats(d):
         prov_note = "無逾期"
     elif prov_curr == 0 and curr > 0 and prov_missing:
         prov_note = "資料缺失"
+    elif prov_curr > PROV_ABNORMAL:
+        prov_note = "數值異常"
     else:
         prov_note = ""
     coverage = safe_div(prov_curr, curr) if curr > 0 else 0.0

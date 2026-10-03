@@ -275,3 +275,66 @@ def test_compute_ovd_stats_prov_note():
     d = {"df_l": df_l}
     stats = compute_ovd_stats(d)
     assert stats["prov_note"] == "無逾期"
+
+
+# ── eProv_note = 數值異常（PROV_ABNORMAL = 10.0，見真實資料回測）──
+
+
+def _make_prov_frames(prov_value):
+    df_m = pd.DataFrame(
+        {
+            "年月": ["11504"],
+            "社號": ["3403"],
+            "社名": ["海星"],
+            "社員數": ["230"],
+            "股金": ["7e7"],
+            "貸放比": ["0.55"],
+            "儲蓄率": ["0.89"],
+        }
+    )
+    df_l = pd.DataFrame(
+        {
+            "年月": ["11504"],
+            "社號": ["3403"],
+            "社名": ["海星"],
+            "開支比": ["0.98"],
+            "逾放比": ["0.035"],
+            "逾期貸款": ["250e4"],
+            "提撥率": [prov_value],
+        }
+    )
+    return df_m, df_l
+
+
+def test_extract_union_data_eProv_note_abnormal():
+    from report_data import _clean_excel, extract_union_data
+
+    df_m, df_l = _make_prov_frames("21.765")
+    cm, cl = _clean_excel(df_m, df_l)
+    d = extract_union_data(cm, cl, pd.DataFrame(), "3403")
+    assert d["eProv_note"] == "數值異常"
+    assert d["graceful_degradation"]["eProv_abnormal"] is True
+
+
+def test_extract_union_data_eProv_note_boundary_not_abnormal():
+    from report_data import _clean_excel, extract_union_data, PROV_ABNORMAL
+
+    df_m, df_l = _make_prov_frames(str(PROV_ABNORMAL))
+    cm, cl = _clean_excel(df_m, df_l)
+    d = extract_union_data(cm, cl, pd.DataFrame(), "3403")
+    assert d["eProv_note"] == ""
+
+
+def test_compute_ovd_stats_prov_note_abnormal():
+    from report_data import compute_ovd_stats
+
+    df_l = pd.DataFrame(
+        {
+            "年月": pd.to_datetime(["2026-04-01", "2025-12-01"]),
+            "逾放比": [0.0042, 0.0040],
+            "提撥率": [21.765, 20.0],
+            "提撥率_缺失": [False, False],
+        }
+    )
+    stats = compute_ovd_stats({"df_l": df_l})
+    assert stats["prov_note"] == "數值異常"
