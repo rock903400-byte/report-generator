@@ -141,36 +141,54 @@ if not _from_cloud:
             st.error(f"載入失敗：{e}")
             st.stop()
 
-    # ── 上傳到雲端並產生分享連結 ──────────────────────────────
+    # ── 上傳到雲端並產生分享連結（管理員功能，需 ADMIN_PASSWORD）──
     _supabase = _init_supabase()
     if _supabase and _APP_URL:
+        from common.utils import verify_password
+
+        _admin_expected = st.secrets.get("ADMIN_PASSWORD", "")
         with st.expander("☁️ 產生雲端分享連結（管理員功能）"):
-            st.caption("上傳資料到雲端後，分享連結給其他人，對方開啟即可直接使用，無需再次上傳。")
-            if st.button("上傳並產生連結", type="secondary"):
-                with st.spinner("上傳中…"):
-                    try:
-                        xl_name = f"report_xl_{uuid.uuid4().hex[:8]}.xlsx"
-                        _supabase.storage.from_(_BUCKET).upload(
-                            xl_name,
-                            excel_bytes,
-                            file_options={
-                                "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            },
-                        )
-                        params = f"xl={xl_name}"
-                        if csv_bytes:
-                            csv_name = f"report_csv_{uuid.uuid4().hex[:8]}.csv"
+            if not _admin_expected:
+                st.info("管理員功能未啟用：請在 Streamlit secrets 設定 ADMIN_PASSWORD 後再使用。")
+            elif not st.session_state.get("admin_authenticated", False):
+                st.caption("此功能會上傳整份原始資料到雲端，請輸入管理員密碼。")
+                _admin_pw = st.text_input("管理員密碼", type="password", key="admin_pw")
+                if _admin_pw:
+                    if verify_password(_admin_pw, _admin_expected):
+                        st.session_state.admin_authenticated = True
+                        st.rerun()
+                    else:
+                        st.error("管理員密碼錯誤")
+            else:
+                st.caption("上傳資料到雲端後，分享連結給其他人，對方開啟即可直接使用，無需再次上傳。")
+                if st.button("登出管理員", type="secondary"):
+                    st.session_state.admin_authenticated = False
+                    st.rerun()
+                if st.button("上傳並產生連結", type="secondary"):
+                    with st.spinner("上傳中…"):
+                        try:
+                            xl_name = f"report_xl_{uuid.uuid4().hex[:8]}.xlsx"
                             _supabase.storage.from_(_BUCKET).upload(
-                                csv_name,
-                                csv_bytes,
-                                file_options={"content-type": "text/csv"},
+                                xl_name,
+                                excel_bytes,
+                                file_options={
+                                    "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                },
                             )
-                            params += f"&csv={csv_name}"
-                        share_url = f"{_APP_URL}/?{params}"
-                        st.code(share_url, language=None)
-                        st.success("連結已產生，複製後分享給使用者，對方開啟即可直接使用。")
-                    except Exception as e:
-                        st.error(f"上傳失敗：{e}")
+                            params = f"xl={xl_name}"
+                            if csv_bytes:
+                                csv_name = f"report_csv_{uuid.uuid4().hex[:8]}.csv"
+                                _supabase.storage.from_(_BUCKET).upload(
+                                    csv_name,
+                                    csv_bytes,
+                                    file_options={"content-type": "text/csv"},
+                                )
+                                params += f"&csv={csv_name}"
+                            share_url = f"{_APP_URL}/?{params}"
+                            st.code(share_url, language=None)
+                            st.success("連結已產生，複製後分享給使用者，對方開啟即可直接使用。")
+                        except Exception as e:
+                            st.error(f"上傳失敗：{e}")
 
 # ── 儲互社選擇 ────────────────────────────────────────────────
 region = st.selectbox("選擇區域", list(REGIONS.keys()))

@@ -1,3 +1,5 @@
+import hmac
+
 import pandas as pd
 
 
@@ -27,3 +29,13 @@ def fmt_pct(v, decimals=1):
         return f"{float(v)*100:.{decimals}f}%"
     except Exception:
         return "—"
+
+
+def verify_password(candidate, expected):
+    """定長比對密碼；expected 未設定（空）時一律回傳 False（fail closed）。"""
+    try:
+        if not expected or candidate is None:
+            return False
+        return hmac.compare_digest(str(candidate), str(expected))
+    except Exception:
+        return False

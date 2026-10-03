@@ -51,3 +51,27 @@ def _first_module(dotted):
     if parts[0] in ("common",):
         return dotted
     return parts[0]
+
+
+def _app_source():
+    app_path = pathlib.Path(__file__).resolve().parent.parent / "app.py"
+    return app_path.read_text(encoding="utf-8")
+
+
+class TestAdminShareGate:
+    """上傳/分享連結段必須被 ADMIN_PASSWORD 守住（選項 A）。"""
+
+    def test_admin_password_gate_present(self):
+        source = _app_source()
+        assert "ADMIN_PASSWORD" in source
+        assert "admin_authenticated" in source
+        assert "verify_password" in source
+
+    def test_upload_button_behind_admin_gate(self):
+        source = _app_source()
+        assert source.index("上傳並產生連結") > source.index("admin_authenticated")
+
+    def test_fail_closed_without_secret(self):
+        source = _app_source()
+        assert "ADMIN_PASSWORD" in source
+        assert "未啟用" in source

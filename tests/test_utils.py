@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from common.utils import safe_div, format_large_number, fmt_pct
+from common.utils import safe_div, format_large_number, fmt_pct, verify_password
 
 
 class TestSafeDiv:
@@ -79,3 +79,25 @@ class TestFmtPct:
 
     def test_none_input(self):
         assert fmt_pct(None) == "—"
+
+
+class TestVerifyPassword:
+    def test_correct_password(self):
+        assert verify_password("s3cret!", "s3cret!") is True
+
+    def test_wrong_password(self):
+        assert verify_password("wrong", "s3cret!") is False
+
+    def test_empty_expected_fails_closed(self):
+        assert verify_password("anything", "") is False
+        assert verify_password("anything", None) is False
+
+    def test_none_candidate(self):
+        assert verify_password(None, "s3cret!") is False
+
+    def test_empty_candidate(self):
+        assert verify_password("", "s3cret!") is False
+
+    def test_type_coercion(self):
+        assert verify_password(1234, 1234) is True
+        assert verify_password(1234, "1234") is True
