@@ -393,3 +393,37 @@ def compute_ovd_stats(d):
         prov_note=prov_note,
         coverage=coverage,
     )
+
+
+def compute_lending_rates(df_csv):
+    """年化放款利率：410x 年利息 / 1311 毛放款月均 ×100，回傳 {年份: 百分比}。
+
+    分母必須用毛放款（1311），不可混入 1319 備抵呆帳抵減項，否則高提撥社
+    的淨額趨近零、利率會灌水數十倍。月份不足 10 個月之年度不計入。
+    """
+    if df_csv is None or df_csv.empty:
+        return {}
+    df = df_csv[df_csv["年月"].notna()].copy()
+    if df.empty:
+        return {}
+    df["年"] = df["年月"].dt.year
+    int_inc = (
+        df[df["會計科目"].astype(str).str.startswith("410")]
+        .groupby(["年", "年月"])["當月金額"]
+        .sum()
+        .groupby(level=0)
+        .sum()
+    )
+    loan_bal = (
+        df[df["會計科目"].astype(str).str.startswith("1311")]
+        .groupby(["年", "年月"])["當月金額"]
+        .sum()
+        .groupby(level=0)
+        .mean()
+    )
+    rate = (int_inc / loan_bal.replace(0, float("nan")) * 100).dropna()
+    cur_yr = int(df["年月"].dt.year.max())
+    if df[df["年"] == cur_yr]["年月"].dt.month.nunique() < 10:
+        rate = rate.drop(cur_yr, errors="ignore")
+    rate = rate.sort_index()
+    return {int(k): float(v) for k, v in rate.items()}

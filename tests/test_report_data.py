@@ -325,3 +325,51 @@ def test_compute_ovd_stats_high_prov_passthrough():
     stats = compute_ovd_stats({"df_l": df_l})
     assert stats["prov_note"] == ""
     assert stats["prov_curr"] == 70.0
+
+
+# ── compute_lending_rates：分母用毛放款 1311，不含 1319 備抵 ──
+
+
+def _lending_csv():
+    rows = []
+    for m in range(1, 13):
+        dt = pd.Timestamp(f"2025-{m:02d}-01")
+        rows += [
+            [dt, "3403", "4101", "利息收入", 100000.0],
+            [dt, "3403", "1311", "信用放款", 30000000.0],
+            [dt, "3403", "1319", "備抵呆帳", -5000000.0],
+        ]
+    rows += [
+        [pd.Timestamp("2026-01-01"), "3403", "4101", "利息收入", 100000.0],
+        [pd.Timestamp("2026-01-01"), "3403", "1311", "信用放款", 30000000.0],
+    ]
+    return pd.DataFrame(rows, columns=["年月", "社號", "會計科目", "會科名稱", "當月金額"])
+
+
+def test_lending_rate_uses_gross_not_net():
+    from report_data import compute_lending_rates
+
+    rates = compute_lending_rates(_lending_csv())
+    # 120萬 / 3000萬毛放款 = 4.0%；若誤含備抵會變成 4.8%
+    assert rates == {2025: pytest.approx(4.0)}
+
+
+def test_lending_rate_drops_partial_year():
+    from report_data import compute_lending_rates
+
+    rates = compute_lending_rates(_lending_csv())
+    assert 2026 not in rates
+
+
+def test_lending_rate_empty():
+    from report_data import compute_lending_rates
+
+    assert compute_lending_rates(pd.DataFrame()) == {}
+
+
+def test_lending_rate_zero_balance_guarded():
+    from report_data import compute_lending_rates
+
+    df = _lending_csv()
+    df.loc[df["會計科目"] == "1311", "當月金額"] = 0.0
+    assert compute_lending_rates(df) == {}

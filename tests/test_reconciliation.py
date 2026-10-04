@@ -93,6 +93,8 @@ def _build_frames():
             [dt, "9901", "5201", "人事費用", 20000.0],
             [dt, "9901", "5301", "業務費用", 30000.0],
             [dt, "9901", "5901", "其他支出", 5000.0],
+            [dt, "9901", "1311", "信用放款", 30000000.0],
+            [dt, "9901", "1319", "備抵呆帳", -5000000.0],
         ]
     for dt in [pd.Timestamp("2026-01-01"), pd.Timestamp("2026-02-01")]:
         rows += [
@@ -232,6 +234,22 @@ class TestProvReconciliation:
     def test_high_prov_rendered_as_pct(self, d_b):
         html = build_report(d_b, {"member_capital_trend": "<div>x</div>"})
         assert "2500.0%" in html
+
+
+class TestLendingRateReconciliation:
+    """放款利率用毛放款：120萬 / 3000萬 = 4.0%（誤含備抵會變 4.8%）。"""
+
+    def test_rate_uses_gross_loans(self, d_a):
+        from report_data import compute_lending_rates
+
+        rates = compute_lending_rates(d_a["df_csv"])
+        assert rates == {2025: pytest.approx(4.0)}
+
+    def test_chart_shows_gross_rate(self, d_a):
+        from report_charts import chart_lending_rate
+
+        html = chart_lending_rate(d_a)
+        assert "4.00%" in html
 
 
 class TestEndToEndRealistic:

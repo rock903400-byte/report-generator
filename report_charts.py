@@ -5,6 +5,7 @@ Plotly 圖表產生（參數化，與社別脫鉤）
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from report_config import THRESHOLDS, THEME_BG, C, PLOTLY_CFG, fmt, fmt_pct, safe_div
+from report_data import compute_lending_rates
 
 
 def style_fig(fig, title="", height=500):
@@ -950,39 +951,16 @@ def make_balance_sheet_html(d):
 
 
 def chart_lending_rate(d):
-    """年化放款利率趨勢（410x 利息收入 / 131x 平均淨額）"""
+    """年化放款利率趨勢（410x 利息收入 / 1311 毛放款月均）"""
     if not d.get("has_csv") or d["df_csv"].empty:
         return "<p style='color:#94A3B8'>無 CSV 財務資料</p>"
 
-    df = d["df_csv"].copy()
-    df["年"] = df["年月"].dt.year
-
-    int_inc = (
-        df[df["會計科目"].str.startswith("410")]
-        .groupby(["年", "年月"])["當月金額"]
-        .sum()
-        .groupby(level=0)
-        .sum()
-    )
-    loan_bal = (
-        df[df["會計科目"].str.startswith("131")]
-        .groupby(["年", "年月"])["當月金額"]
-        .sum()
-        .groupby(level=0)
-        .mean()
-    )
-    rate = (int_inc / loan_bal * 100).dropna()
-
-    cur_yr = int(df["年月"].dt.year.max())
-    if df[df["年"] == cur_yr]["年月"].dt.month.nunique() < 10:
-        rate = rate.drop(cur_yr, errors="ignore")
-
-    if rate.empty:
+    rates = compute_lending_rates(d["df_csv"])
+    if not rates:
         return "<p style='color:#94A3B8'>放款利率資料不足</p>"
 
-    rate = rate.sort_index()
-    years = [str(yr) for yr in rate.index]
-    vals = rate.values.tolist()
+    years = [str(yr) for yr in rates]
+    vals = list(rates.values())
 
     fig = go.Figure()
     fig.add_trace(

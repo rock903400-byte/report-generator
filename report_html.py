@@ -7,7 +7,7 @@ from html import escape as html_escape
 from datetime import date
 from jinja2 import Environment, FileSystemLoader
 from report_config import THEME_BG, C, THRESHOLDS, fmt, fmt_pct, GEMINI_MODEL
-from report_data import compute_ovd_stats
+from report_data import compute_ovd_stats, compute_lending_rates
 from common.sparkline import _sparkline_svg
 
 
@@ -154,30 +154,10 @@ def build_kpi_yoy_table(d):
         r = l_ye[l_ye["年月"].dt.year == yr]
         return float(r.iloc[-1][col]) if not r.empty and col in r.columns else None
 
-    # 計算放款利率（410x 年利息 / 131x 月均淨額）
+    # 計算放款利率（410x 年利息 / 1311 毛放款月均，與趨勢圖共用函式）
     lr = {}
     if d.get("has_csv") and not d["df_csv"].empty:
-        dfc = d["df_csv"].copy()
-        dfc["年"] = dfc["年月"].dt.year
-        ii = (
-            dfc[dfc["會計科目"].str.startswith("410")]
-            .groupby(["年", "年月"])["當月金額"]
-            .sum()
-            .groupby(level=0)
-            .sum()
-        )
-        lb = (
-            dfc[dfc["會計科目"].str.startswith("131")]
-            .groupby(["年", "年月"])["當月金額"]
-            .sum()
-            .groupby(level=0)
-            .mean()
-        )
-        rs = (ii / lb * 100).dropna()
-        cur_yr = int(dfc["年月"].dt.year.max())
-        if dfc[dfc["年"] == cur_yr]["年月"].dt.month.nunique() < 10:
-            rs = rs.drop(cur_yr, errors="ignore")
-        lr = rs.to_dict()
+        lr = compute_lending_rates(d["df_csv"])
 
     def _fmt_prov(yr):
         prov_v = _lval(yr, "提撥率")
