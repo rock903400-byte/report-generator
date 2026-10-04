@@ -3,6 +3,30 @@
 """
 
 from report_config import GEMINI_MODEL, fmt, fmt_pct
+import time
+
+# 暫時性錯誤標記：命中即自動重打（最多 3 次，間隔 5s、15s）。
+# 刻意不用裸 "500"（會誤判 "1500 tokens" 之類字串）。
+_TRANSIENT_MARKERS = (
+    "503",
+    "429",
+    "unavailable",
+    "resource_exhausted",
+    "overloaded",
+    "high demand",
+    "timeout",
+    "timed out",
+    "deadline",
+    "connection reset",
+    "temporarily unavailable",
+)
+
+_BUSY_MSG = "模型忙線中，請稍後再按一次「產生報告」（不需重新上傳）"
+
+
+def _is_transient(err):
+    msg = str(err).lower()
+    return any(m in msg for m in _TRANSIENT_MARKERS)
 
 _SYSTEM = """語氣：專業、客觀、簡潔，像寫給理事會的內部報告。
 
@@ -97,27 +121,37 @@ def build_ai_prompt(d):
 開支比：{r_trend}"""
 
 
-def call_gemini(prompt, api_key):
-    """呼叫 Gemini API，回傳分析文字"""
+def call_gemini(prompt, api_key, max_attempts=3):
+    """呼叫 Gemini API，回傳分析文字；暫時性錯誤自動重試"""
     from google import genai
     from google.genai import types
 
     client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-        # 3.x Flash 不支援 temperature / thinking_budget（server 報錯）；
-        # 用 thinking_level LOW 保持低延遲（原 thinking_budget=0 的對應做法）。
-        config=types.GenerateContentConfig(
-            max_output_tokens=2048,
-            thinking_config=types.ThinkingConfig(thinking_level="LOW"),
-        ),
-    )
-    return response.text
+    last_err = None
+    for attempt in range(max_attempts):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                # 3.x Flash 不支援 temperature / thinking_budget（server 報錯）；
+                # 用 thinking_level LOW 保持低延遲（原 thinking_budget=0 的對應做法）。
+                config=types.GenerateContentConfig(
+                    max_output_tokens=2048,
+                    thinking_config=types.ThinkingConfig(thinking_level="LOW"),
+                ),
+            )
+            return response.text
+        except Exception as e:
+            last_err = e
+            if attempt < max_attempts - 1 and _is_transient(e):
+                time.sleep(5 if attempt == 0 else 15)
+                continue
+            raise
+    raise last_err
 
 
 def analyze_with_gemini(d, api_key=""):
-    """主入口；失敗回傳 (None, error_msg)"""
+    """主入口；失敗回傳 (None, error_msg)，忙線中回人話不貼原始 JSON"""
     if not api_key:
         return None, "未設定 API Key"
     try:
@@ -125,4 +159,6 @@ def analyze_with_gemini(d, api_key=""):
         result = call_gemini(prompt, api_key)
         return result, None
     except Exception as e:
+        if _is_transient(e):
+            return None, _BUSY_MSG
         return None, str(e)

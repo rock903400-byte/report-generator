@@ -77,6 +77,7 @@ python -m pytest tests/test_classifier.py::TestClassifySpecialCare -v  # 單類
 - `max_output_tokens=2048`
 - API key: env `GEMINI_API_KEY` 或 `st.secrets.GEMINI_API_KEY`；失敗回傳 `(None, error_msg)`
 - `analyze_with_gemini()` 回傳 `(str | None, str | None)`：`(分析結果, 錯誤訊息)`
+- 重試：503/429 等暫時性錯誤自動重打（最多 3 次，間隔 5s、15s）；忙線中回人話，不貼原始 JSON
 - `_md_to_html()` 轉 Gemini markdown（`**粗體**`、`#`、`-`/`1.` 列表，**不支援表格**）
 - `_is_ai_truncated()` 檢查截斷（以 `**` / `*` / `-` / `：` 結尾 → 顯示警告）
 

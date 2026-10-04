@@ -1,4 +1,7 @@
 from unittest.mock import patch, MagicMock
+
+import pytest
+
 from report_ai import build_ai_prompt, call_gemini, analyze_with_gemini
 
 
@@ -172,6 +175,51 @@ class TestCallGemini:
         assert kwargs["model"] is not None
 
     @patch("google.genai.Client")
+    def test_transient_error_retries_then_succeeds(self, mock_client):
+        mock_instance = MagicMock()
+        mock_client.return_value = mock_instance
+        mock_response = MagicMock()
+        mock_response.text = "recovered"
+        mock_instance.models.generate_content.side_effect = [
+            Exception("503 UNAVAILABLE"),
+            mock_response,
+        ]
+        with patch("report_ai.time") as mock_time:
+            result = call_gemini("prompt", "key")
+        assert result == "recovered"
+        assert mock_instance.models.generate_content.call_count == 2
+        mock_time.sleep.assert_called_once_with(5)
+
+    @patch("google.genai.Client")
+    def test_non_transient_error_no_retry(self, mock_client):
+        mock_instance = MagicMock()
+        mock_client.return_value = mock_instance
+        mock_instance.models.generate_content.side_effect = Exception("API Error")
+        with patch("report_ai.time") as mock_time:
+            with pytest.raises(Exception, match="API Error"):
+                call_gemini("prompt", "key")
+        assert mock_instance.models.generate_content.call_count == 1
+        mock_time.sleep.assert_not_called()
+
+    @patch("google.genai.Client")
+    def test_transient_exhausts_retries(self, mock_client):
+        mock_instance = MagicMock()
+        mock_client.return_value = mock_instance
+        mock_instance.models.generate_content.side_effect = Exception("503 UNAVAILABLE")
+        with patch("report_ai.time"):
+            with pytest.raises(Exception, match="503"):
+                call_gemini("prompt", "key")
+        assert mock_instance.models.generate_content.call_count == 3
+
+    def test_analyze_busy_message_on_503(self):
+        from report_ai import analyze_with_gemini as analyze
+
+        with patch("report_ai.call_gemini", side_effect=Exception("503 UNAVAILABLE")):
+            result, error = analyze(_make_d(), api_key="key")
+        assert result is None
+        assert "忙線中" in error
+
+    @patch("google.genai.Client")
     def test_api_config_for_flash3(self, mock_client):
         # 3.x Flash：禁 temperature，thinking 用 level（LOW 保低延遲）
         mock_instance = MagicMock()
@@ -228,8 +276,9 @@ class TestAnalyzeWithGemini:
         assert result is None
 
     @patch("report_ai.call_gemini", side_effect=Exception("Timeout"))
-    def test_api_error_does_not_raise(self, mock_call):
+    def test_api_error_returns_busy_message(self, mock_call):
         d = _make_d()
         result, error = analyze_with_gemini(d, api_key="key")
         assert result is None
-        assert "Timeout" in error
+        assert "忙線中" in error
+        assert "Timeout" not in error
