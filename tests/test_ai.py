@@ -137,6 +137,13 @@ class TestBuildAiPrompt:
         assert "截至2026年04月" in prompt
         assert "民114年度" in prompt
 
+    def test_no_stale_2pct_threshold(self):
+        # 2% 警戒已移除，prompt 內不得再出現舊門檻字樣
+        d = _make_d()
+        prompt = build_ai_prompt(d)
+        assert "門檻 2%" not in prompt
+        assert "警戒值" not in prompt
+
 
 class TestCallGemini:
     @patch("google.genai.Client")
