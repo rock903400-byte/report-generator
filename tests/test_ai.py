@@ -28,13 +28,16 @@ def _make_d():
         s_name="海星",
         s_no="3403",
         max_d=pd.Timestamp("2026-04-01"),
+        T0=pd.Timestamp("2025-12-01"),
         curr_M=205,
         curr_S=4.8e7,
         memG_curr=-0.014,
         shrG_curr=-0.04,
         eLoan=0.42,
+        curr_eLoan=0.42,
         eRate=0.83,
         eOvd=0.035,
+        curr_eOvd=0.035,
         R0=0.95,
         eProv=0.015,
         status="📊 一般狀態",
@@ -112,6 +115,27 @@ class TestBuildAiPrompt:
         d["eProv_note"] = ""
         prompt = build_ai_prompt(d)
         assert "7130.0%" in prompt
+
+    def test_prompt_uses_latest_ovd_not_dec_snapshot(self):
+        d = _make_d()
+        d["eOvd"] = 0.10
+        d["curr_eOvd"] = 0.137
+        prompt = build_ai_prompt(d)
+        assert "13.7%" in prompt
+        assert "10.0%" not in prompt
+
+    def test_prompt_uses_latest_loan_not_dec_snapshot(self):
+        d = _make_d()
+        d["curr_eLoan"] = 0.45
+        prompt = build_ai_prompt(d)
+        assert "45.0%" in prompt
+        assert "42.0%" not in prompt
+
+    def test_prompt_date_labels(self):
+        d = _make_d()
+        prompt = build_ai_prompt(d)
+        assert "截至2026年04月" in prompt
+        assert "民114年度" in prompt
 
 
 class TestCallGemini:

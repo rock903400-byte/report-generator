@@ -227,13 +227,16 @@ def extract_union_data(df_m, df_l, df_csv, union_id):
         memG=memG,
         shrG=shrG,
     )
-    status, reason_text = classify(p, THRESHOLDS)
+    # 時點現況改吃最新月（curr_*），趨勢鏈（R/M/S 年底快照）維持不動；
+    # 判定反映報告截至月的現況，而非去年底。
+    p_curr = dict(p, eOvd=curr_eOvd, eLoan=curr_eLoan, memG=memG_curr, shrG=shrG_curr)
+    status, reason_text = classify(p_curr, THRESHOLDS)
     status_color = STATUS_COLORS.get(status, "#64748B")
 
     # 保留 notes + risk_count 給模板用
     c1 = R0 > THRESHOLDS["high_risk_income_ratio"] and R1 > THRESHOLDS["high_risk_income_ratio"]
-    c2 = eLoan < THRESHOLDS["high_risk_loan_ratio"]
-    c3 = eOvd > THRESHOLDS["high_risk_ovd"] and O0 > O1
+    c2 = curr_eLoan < THRESHOLDS["high_risk_loan_ratio"]
+    c3 = curr_eOvd > THRESHOLDS["high_risk_ovd"] and O0 > O1
     c4 = M0 < M1 < M2 < M3
     c5 = S0 < S1 < S2 < S3
     notes = []
@@ -353,7 +356,7 @@ def compute_ovd_stats(d):
             prov_note="",
             coverage=0,
         )
-    WARN = THRESHOLDS["ovd_safe_line"]
+    WARN = THRESHOLDS["pearls_ovd_limit"]
     curr = float(df["逾放比"].iloc[-1])
     avg12 = float(df["逾放比"].tail(12).mean())
     hist_max = float(df["逾放比"].max())

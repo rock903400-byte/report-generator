@@ -43,7 +43,8 @@ _SYSTEM = """語氣：專業、客觀、簡潔，像寫給理事會的內部報�
 
 評分標準：
 - 成長性：3Y 社員成長 >10% → 8-10 分；0-10% → 5-7 分；<0% → 1-4 分
-- 資產品質：逾放比 <1% → 9-10 分；1-2% → 6-8 分；2-5% → 3-5 分；>5% → 1-2 分
+- 資產品質：逾放比 <1% → 9-10 分；1-5% → 4-8 分；>5% → 1-3 分
+  （1% 對應金管會優等線，5% 對應 PEARLS 上限）
 - 獲利能力：開支比 <90% → 8-10 分；90-100% → 5-7 分；>100% → 1-4 分
 - 流動性：貸放比 40-80% → 8-10 分；30-40% 或 80-90% → 5-7 分；<30% 或 >90% → 1-4 分
 
@@ -56,10 +57,12 @@ _SYSTEM = """語氣：專業、客觀、簡潔，像寫給理事會的內部報�
 
 
 def build_ai_prompt(d):
-    """從 d dict 組出中文 prompt"""
+    """從 d dict 組出中文 prompt（時點指標一律用最新月 curr_*，並標註截至年月）"""
     m_trend = f"{int(d['M3']):,} → {int(d['M2']):,} → {int(d['M1']):,} → {int(d['M0']):,}"
     s_trend = f"{fmt(d['S3'])} → {fmt(d['S2'])} → {fmt(d['S1'])} → {fmt(d['S0'])}"
     r_trend = f"{fmt_pct(d['R1'])} → {fmt_pct(d['R0'])}"
+    data_end = d["max_d"].strftime("%Y年%m月")
+    t0_year = f"民{d['T0'].year - 1911}年度"
 
     prov_note = d.get("eProv_note", "")
     if prov_note == "資料缺失":
@@ -78,10 +81,10 @@ def build_ai_prompt(d):
 === 核心指標 ===
 社員數：{int(d['curr_M']):,} 人（12M {fmt_pct(d['memG_curr'])}）
 股金：{fmt(d['curr_S'])}（12M {fmt_pct(d['shrG_curr'])}）
-貸放比：{fmt_pct(d['eLoan'])}（健康範圍 40–80%）
-儲蓄率：{fmt_pct(d['eRate'])}
-逾放比：{fmt_pct(d['eOvd'])}（警戒值 2%）
-開支比（年）：{fmt_pct(d['R0'])}（>100% 為虧損）
+    貸放比：{fmt_pct(d['curr_eLoan'])}（健康範圍 40–80%，截至{data_end}）
+    儲蓄率：{fmt_pct(d['eRate'])}（截至{data_end}）
+    逾放比：{fmt_pct(d['curr_eOvd'])}（PEARLS 上限 5%，截至{data_end}）
+    開支比（{t0_year}）：{fmt_pct(d['R0'])}（>100% 為虧損）
 提撥率：{prov_text}
 
 === 風險診斷 ===

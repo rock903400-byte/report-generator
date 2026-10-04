@@ -6,10 +6,9 @@ THRESHOLDS = {
     "idle_loan": 0.3,
     "stable_loan_min": 0.4,
     "stable_loan_max": 0.8,
-    "ovd_safe_line": 0.02,
+    "pearls_ovd_limit": 0.05,
     "high_risk_income_ratio": 1.0,
     "high_risk_loan_ratio": 0.1,
-    "high_risk_ovd_ratio": 0.5,
     "savings_good": 0.6,
     "provision_good": 0.01,
 }
@@ -177,7 +176,7 @@ class TestClassifyIdleFunds:
             sLoan=0.30,  # < idle_loan (0.3)
             eOvd=0.01,
             O0=50,
-            O1=60,  # < ovd_safe_line (0.02)
+            O1=60,
             M0=230,
             M1=220,
             M2=215,
@@ -191,7 +190,7 @@ class TestClassifyIdleFunds:
         )
         status, reason = classify(p, THRESHOLDS)
         assert "資金閒置" in status
-        assert "貸放比偏低且逾放安全" in reason
+        assert "貸放比偏低且逾放可控" in reason
 
     def test_low_loan_but_high_ovd_not_idle(self):
         p = dict(
@@ -201,7 +200,7 @@ class TestClassifyIdleFunds:
             sLoan=0.30,
             eOvd=0.05,
             O0=50,
-            O1=60,  # > ovd_safe_line
+            O1=60,  # == pearls_ovd_limit (0.05)，不算可控 → 非閒置
             M0=230,
             M1=220,
             M2=215,
@@ -300,7 +299,7 @@ class TestClassifyGeneral:
             R1=0.90,
             eLoan=0.35,
             sLoan=0.35,
-            eOvd=0.05,
+            eOvd=0.06,
             O0=50,
             O1=60,
             M0=210,

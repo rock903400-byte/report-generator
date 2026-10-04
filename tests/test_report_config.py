@@ -61,10 +61,9 @@ def test_thresholds_have_keys():
         "high_risk_ovd",
         "liquidity_loan",
         "idle_loan",
-        "ovd_safe_line",
+        "pearls_ovd_limit",
         "high_risk_income_ratio",
         "high_risk_loan_ratio",
-        "high_risk_ovd_ratio",
         "savings_good",
         "provision_good",
     ]

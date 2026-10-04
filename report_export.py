@@ -70,7 +70,7 @@ def export_excel(d, output_path):
         {"指標項目": "現有股金", "數值": fmt(d["curr_S"]), "說明": f"12M {'↑' if d['shrG_curr'] >= 0 else '↓'} {fmt(abs(d['curr_S'] - d['S0']))} ({fmt_pct(d['shrG_curr'])})"},
         {"指標項目": "貸放比", "數值": fmt_pct(d["curr_eLoan"]), "說明": f"{'偏低' if d['curr_eLoan'] < 0.4 else '偏高' if d['curr_eLoan'] > 0.8 else '正常範圍'} (40–80%){loan_yoy}"},
         {"指標項目": "儲蓄率", "數值": fmt_pct(d["eRate"]), "說明": f"門檻 {sav_thr * 100:.0f}%，{'達標 ✓' if sav_ok else '未達標 ✗'}"},
-        {"指標項目": "逾放比", "數值": fmt_pct(d["curr_eOvd"]), "說明": f"{'⚠ 警戒' if d['curr_eOvd'] > 0.02 else '✓ 正常'} (警戒值 2%)"},
+        {"指標項目": "逾放比", "數值": fmt_pct(d["curr_eOvd"]), "說明": f"{'偏高' if d['curr_eOvd'] > THRESHOLDS['pearls_ovd_limit'] else '正常'} (PEARLS 上限 {THRESHOLDS['pearls_ovd_limit'] * 100:.0f}%)"},
         {"指標項目": "開支比(年)", "數值": fmt_pct(d["R0"]), "說明": f"{'⚠ 虧損' if d['R0'] > 1.0 else '✓ 盈餘'} (損益平衡 100%)"},
         {"指標項目": "提撥率", "數值": prov_value, "說明": prov_sub},
     ]

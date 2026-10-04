@@ -329,8 +329,8 @@ def build_report(d, charts, ai_analysis=None):
         {
             "label": "逾放比",
             "value": fmt_pct(d["curr_eOvd"]),
-            "sub": f"{'⚠ 警戒' if d['curr_eOvd'] > 0.02 else '✓ 正常'} (警戒值 2%)",
-            "good": d["curr_eOvd"] <= 0.02,
+            "sub": f"{'偏高' if d['curr_eOvd'] > THRESHOLDS['pearls_ovd_limit'] else '正常'} (PEARLS 上限 {THRESHOLDS['pearls_ovd_limit'] * 100:.0f}%)",
+            "good": d["curr_eOvd"] <= THRESHOLDS["pearls_ovd_limit"],
         },
         {
             "label": "開支比(年)",
@@ -358,13 +358,13 @@ def build_report(d, charts, ai_analysis=None):
             "label": "最新逾放比",
             "value": fmt_pct(ovd["curr"]),
             "sub": "最新一期數值",
-            "good": ovd["curr"] <= THRESHOLDS["ovd_safe_line"],
+            "good": ovd["curr"] <= THRESHOLDS["pearls_ovd_limit"],
         },
         {
             "label": "近 12M 平均",
             "value": fmt_pct(ovd["avg12"]),
             "sub": "過去 12 期平均",
-            "good": ovd["avg12"] <= THRESHOLDS["ovd_safe_line"],
+            "good": ovd["avg12"] <= THRESHOLDS["pearls_ovd_limit"],
         },
         {
             "label": "歷史最高",
@@ -381,7 +381,7 @@ def build_report(d, charts, ai_analysis=None):
         {
             "label": "超標月數",
             "value": f"{ovd['months_warn']} / {ovd['months_total']} M",
-            "sub": "超過 2% 警戒線的月份數",
+            "sub": f"超過 {THRESHOLDS['pearls_ovd_limit'] * 100:.0f}%（PEARLS 上限）的月份數",
             "good": ovd["months_warn"] == 0,
         },
         {

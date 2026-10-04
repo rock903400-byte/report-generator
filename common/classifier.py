@@ -24,18 +24,18 @@ def classify(p, thresholds):
 
     if p["eLoan"] > T["liquidity_loan"] and p["shrG"] < 0:
         return "⚠️ 流動性緊繃", "貸放比偏高且股金衰退"
-    if p["eLoan"] < T["idle_loan"] and p["eOvd"] < T["ovd_safe_line"]:
-        return "💤 資金閒置", "貸放比偏低且逾放安全"
+    if p["eLoan"] < T["idle_loan"] and p["eOvd"] < T["pearls_ovd_limit"]:
+        return "💤 資金閒置", "貸放比偏低且逾放可控"
     if (
         p["memG"] > 0
         and p["shrG"] > 0
         and T["stable_loan_min"] < p["eLoan"] < T["stable_loan_max"]
-        and p["eOvd"] < T["ovd_safe_line"]
+        and p["eOvd"] < T["pearls_ovd_limit"]
     ):
         return "✅ 穩健模範", "各項指標均達標"
 
     notes = []
-    if p["eOvd"] > T["ovd_safe_line"]:
+    if p["eOvd"] > T["pearls_ovd_limit"]:
         notes.append(f"逾放比偏高 {p['eOvd']:.1%}")
     if p["R0"] >= T["high_risk_income_ratio"]:
         notes.append(f"去年年底虧損 開支比 {p['R0']:.1%}")

@@ -9,17 +9,16 @@ class TestDefaultThresholds:
             "idle_loan",
             "stable_loan_min",
             "stable_loan_max",
-            "ovd_safe_line",
+            "pearls_ovd_limit",
             "high_risk_income_ratio",
             "high_risk_loan_ratio",
-            "high_risk_ovd_ratio",
             "savings_good",
             "provision_good",
         }
         assert set(DEFAULT_THRESHOLDS.keys()) == expected_keys
 
-    def test_ovd_safe_line(self):
-        assert DEFAULT_THRESHOLDS["ovd_safe_line"] == 0.02
+    def test_pearls_ovd_limit(self):
+        assert DEFAULT_THRESHOLDS["pearls_ovd_limit"] == 0.05
 
     def test_stable_loan_bounds(self):
         assert DEFAULT_THRESHOLDS["stable_loan_min"] == 0.4
@@ -39,9 +38,9 @@ class TestLoadThresholds:
         assert result == DEFAULT_THRESHOLDS
 
     def test_partial_thresholds_override(self):
-        secrets = {"thresholds": {"ovd_safe_line": 0.03}}
+        secrets = {"thresholds": {"pearls_ovd_limit": 0.03}}
         result = load_thresholds(secrets)
-        assert result["ovd_safe_line"] == 0.03
+        assert result["pearls_ovd_limit"] == 0.03
         assert result["stable_loan_min"] == 0.4
 
     def test_full_override(self):

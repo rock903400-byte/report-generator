@@ -375,11 +375,11 @@ def chart_risk_trend(d):
         secondary_y=True,
     )
     fig.add_hline(
-        y=THRESHOLDS["ovd_safe_line"],
+        y=THRESHOLDS["pearls_ovd_limit"],
         line_dash="dash",
         line_color=C["amber"],
         opacity=0.7,
-        annotation_text="逾放比警戒 2%",
+        annotation_text="逾放比上限 5%（PEARLS）",
         annotation_font=dict(size=11, color=C["amber"]),
     )
     fig.add_hline(
@@ -438,7 +438,7 @@ def chart_risk_trend(d):
 
 def chart_ovd_full_history(d):
     df = d["df_l"][["年月", "逾放比"]].copy()
-    WARN = THRESHOLDS["ovd_safe_line"]
+    WARN = THRESHOLDS["pearls_ovd_limit"]
     df["3M均"] = df["逾放比"].rolling(3, min_periods=1).mean()
     df["6M均"] = df["逾放比"].rolling(6, min_periods=1).mean()
     y_max = max(df["逾放比"].max() * 1.2, WARN * 3)
@@ -449,7 +449,7 @@ def chart_ovd_full_history(d):
         y1=y_max,
         fillcolor="rgba(239,68,68,0.07)",
         line_width=0,
-        annotation_text="警戒區（逾放比 > 2%）",
+        annotation_text="超標區（逾放比 > 5%）",
         annotation_position="top left",
         annotation_font=dict(color=C["red"], size=12),
     )
@@ -488,7 +488,7 @@ def chart_ovd_full_history(d):
         line_dash="dash",
         line_color=C["amber"],
         line_width=2,
-        annotation_text="警戒線 2%",
+        annotation_text="上限 5%（PEARLS）",
         annotation_position="bottom right",
     )
 
@@ -550,11 +550,11 @@ def chart_ovd_amount(d):
         secondary_y=True,
     )
     fig.add_hline(
-        y=THRESHOLDS["ovd_safe_line"],
+        y=THRESHOLDS["pearls_ovd_limit"],
         line_dash="dash",
         line_color=C["red"],
         opacity=0.6,
-        annotation_text="警戒線 2%",
+        annotation_text="上限 5%（PEARLS）",
         annotation_font=dict(size=11, color=C["red"]),
         secondary_y=True,
     )

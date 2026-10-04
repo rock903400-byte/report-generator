@@ -327,6 +327,41 @@ def test_compute_ovd_stats_high_prov_passthrough():
     assert stats["prov_curr"] == 70.0
 
 
+def test_extract_union_data_status_follows_latest_month():
+    # 年底快照貸放比 0.20（舊基準會判資金閒置），最新月已回升 0.50：
+    # 狀態必須跟最新走（穩健模範），而非去年底。
+    from report_data import _clean_excel, extract_union_data
+
+    months = ["11412"] + [f"1150{i}" for i in range(1, 9)]
+    n = len(months)
+    df_m = pd.DataFrame(
+        {
+            "年月": months,
+            "社號": ["9901"] * n,
+            "社名": ["驗證社"] * n,
+            "社員數": [str(200 + 10 * i) for i in range(n)],
+            "股金": [f"5.{i}e7" for i in range(n)],
+            "貸放比": ["0.20", "0.24", "0.28", "0.32", "0.36", "0.40", "0.44", "0.47", "0.50"],
+            "儲蓄率": ["0.85"] * n,
+        }
+    )
+    df_l = pd.DataFrame(
+        {
+            "年月": months,
+            "社號": ["9901"] * n,
+            "社名": ["驗證社"] * n,
+            "開支比": ["0.9"] * n,
+            "逾放比": ["0.005"] * n,
+            "逾期貸款": ["1e5"] * n,
+            "提撥率": ["1.5"] * n,
+        }
+    )
+    cm, cl = _clean_excel(df_m, df_l)
+    d = extract_union_data(cm, cl, pd.DataFrame(), "9901")
+    assert d["status"] == "✅ 穩健模範"
+    assert d["reason_text"] == "各項指標均達標"
+
+
 # ── compute_lending_rates：分母用毛放款 1311，不含 1319 備抵 ──
 
 

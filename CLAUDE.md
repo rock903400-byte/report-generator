@@ -63,9 +63,10 @@ report_html.py    build_report(d, charts, ai_analysis) → HTML str
 | `M0`–`M3`, `S0`–`S3` | 社員數/股金各年底快照 |
 | `R0`, `R1` | 開支比（年底，R0>1.0 表虧損） |
 | `O0`, `O1` | 逾期貸款金額（年底） |
-| `eOvd`, `eLoan`, `eRate`, `eProv` | 最新年底各率 |
+| `eOvd`, `eLoan`, `eRate`, `eProv` | 年底（T0）各率；僅趨勢/相容保留，判定與呈現改用 curr_* |
 | `curr_M`, `curr_S` | 最新月份社員數/股金 |
-| `memG_curr`, `shrG_curr` | 12M YoY 成長率（相對 T0） |
+| `curr_eLoan`, `curr_eOvd` | 最新月份各率（判定與呈現用） |
+| `memG_curr`, `shrG_curr` | 12M YoY 成長率（相對 T_12M，判定用） |
 | `status`, `status_color`, `reason_text` | 風險診斷結果 |
 | `notes`, `risk_count` | 觸發條目列表與觸發條件數（0–5） |
 
